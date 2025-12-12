@@ -45,11 +45,15 @@
             <button 
               type="button" 
               class="send-code-btn"
-              :class="{ counting: isCounting }"
-              :disabled="isCounting"
+              :class="{
+                counting: isCounting,
+                animating: sendAnimating,
+                sending: showSendingUI
+              }"
+              :disabled="isCounting || sendLoading || sendAnimating"
               @click="sendCode"
             >
-              {{ isCounting ? `${count}s` : 'Send Code' }}
+              {{ isCounting ? `${count}s` : (showSendingUI ? 'Sending...' : 'Send Code') }}
             </button>
           </div>
 
@@ -105,7 +109,9 @@
             </label>
           </div>
 
-          <button type="submit" class="primary-btn blur-fade" :class="{ 'animate': isMounted }">Sign Up</button>
+          <button type="submit" class="primary-btn blur-fade" :class="{ 'animate': isMounted }" :disabled="registerLoading">
+            {{ registerLoading ? 'Signing Up...' : 'Sign Up' }}
+          </button>
         </form>
 
         <div class="footer slide-in-left" :class="{ 'animate': isMounted }">
@@ -146,9 +152,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-// 假设视频路径一致
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import bgVideo from '@/assets/images/section4.webm'
+
+const router = useRouter()
+
+const API_BASE = 'http://43.160.245.84:8000'
 
 const username = ref('')
 const phone = ref('')
@@ -157,34 +167,107 @@ const confirmPassword = ref('')
 const code = ref('')
 const isMounted = ref(false)
 
+// loading
+const sendLoading = ref(false)
+const registerLoading = ref(false)
+const sendAnimating = ref(false)      // 点击后动画阶段
+const showSendingUI = ref(false)      // 动画后显示 Sending...（白底）
+
 // 倒计时逻辑
 const isCounting = ref(false)
-const count = ref(6)
+const count = ref(60)
 let timer = null
 
-const sendCode = () => {
-  if (!phone.value) {
-    alert('Please enter phone number first')
-    return
+const stopCountdown = () => {
+  if (timer) {
+    clearInterval(timer)
+    timer = null
   }
-  
-  // 模拟发送
-  console.log('Sending code to', phone.value)
-  
+}
+
+const startCountdown = (seconds) => {
+  stopCountdown()
   isCounting.value = true
-  count.value = 60
-  
+  count.value = seconds
+
   timer = setInterval(() => {
-    count.value--
+    count.value -= 1
     if (count.value <= 0) {
-      clearInterval(timer)
+      stopCountdown()
       isCounting.value = false
-      count.value = 60
+      count.value = seconds
     }
   }, 1000)
 }
 
-// 创办时间逻辑 (保持不变)
+async function postJson(path, body) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+  let data = null
+  try {
+    data = await res.json()
+  } catch (e) {
+    // ignore
+  }
+
+  if (!res.ok) {
+    const msg =
+      data?.detail ||
+      data?.message ||
+      (typeof data === 'string' ? data : null) ||
+      `Request failed (${res.status})`
+    throw new Error(msg)
+  }
+
+  return data
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+const sendCode = async () => {
+  const p = phone.value.trim()
+  if (!p) {
+    alert('Please enter phone number first')
+    return
+  }
+
+  if (isCounting.value || sendLoading.value || sendAnimating.value) return
+
+  // 进入 1s 动画阶段：先不显示 Sending...
+  sendAnimating.value = true
+  showSendingUI.value = false
+
+  // 请求可以立刻发（不耽误），但 UI 1s 后才显示 Sending
+  sendLoading.value = true
+  const req = postJson('/api/auth/send-code', { phone: p })
+
+  try {
+    // 等动画走完 2s
+    await sleep(2000)
+    sendAnimating.value = false
+    showSendingUI.value = true
+
+    // 等接口返回，再开始倒计时
+    const resp = await req
+    const seconds = Number(resp?.resend_interval_seconds) || 60
+
+    // 进入倒计时前，把 Sending UI 关掉（倒计时优先生效）
+    showSendingUI.value = false
+    startCountdown(seconds)
+  } catch (err) {
+    alert(err?.message || 'Failed to send code')
+    showSendingUI.value = false
+  } finally {
+    sendAnimating.value = false
+    sendLoading.value = false
+  }
+}
+
+// 创办时间逻辑（你这页暂时没用到也保留）
 const foundedTimestamp = new Date('2024-01-28T00:00:00').getTime()
 const foundedDays = computed(() => {
   const diffTime = Date.now() - foundedTimestamp
@@ -195,24 +278,43 @@ const foundedHours = computed(() => {
   return Math.floor(diffTime / (1000 * 60 * 60)) % 24
 })
 
-const handleRegister = () => {
+const handleRegister = async () => {
+  if (registerLoading.value) return
+
   if (password.value !== confirmPassword.value) {
     alert('Passwords do not match!')
     return
   }
-  console.log('Register', { 
-    username: username.value, 
-    phone: phone.value, 
-    code: code.value,
-    password: password.value 
-  })
+
+  const payload = {
+    username: username.value.trim(),
+    phone: phone.value.trim(),
+    password: password.value,
+    confirm_password: confirmPassword.value,
+    code: code.value.trim(),
+  }
+
+  registerLoading.value = true
+  try {
+    const resp = await postJson('/api/auth/register', payload)
+    console.log('Register success:', resp)
+    // 注册成功：跳回登录页（你也可以改成直接进入首页）
+    router.push('/login')
+  } catch (err) {
+    alert(err?.message || 'Register failed')
+  } finally {
+    registerLoading.value = false
+  }
 }
 
 onMounted(() => {
-  // 延迟触发动画，确保 DOM 渲染完成
   setTimeout(() => {
     isMounted.value = true
   }, 100)
+})
+
+onBeforeUnmount(() => {
+  stopCountdown()
 })
 </script>
 
@@ -540,22 +642,8 @@ onMounted(() => {
   margin-bottom: 0;
 }
 
-/* 只有按下(active)或倒计时(counting)时文字变黑 */
-.send-code-btn:active:not(:disabled),
-.send-code-btn.counting {
-  color: black;
-  transform: none;
-  box-shadow: none;
-}
-
-/* 只有按下(active)或倒计时(counting)时，白色背景滑入 */
-.send-code-btn:active:not(:disabled):after,
-.send-code-btn.counting:after {
-  transform: skewX(-45deg) scale(1, 1);
-}
-
 /* 背景遮罩层基础样式 */
-.send-code-btn:after {
+.send-code-btn::after {
   content: "";
   background: white;
   position: absolute;
@@ -565,30 +653,64 @@ onMounted(() => {
   top: 0;
   bottom: 0;
   transform: skewX(-45deg) scale(0, 1);
-  transition: all 0.5s;
+  transition: transform 0.5s;
 }
 
-/* 禁用状态 */
+/* hover 触发（你之前要的 hover） */
+.send-code-btn:hover:not(:disabled) {
+  color: black;
+}
+.send-code-btn:hover:not(:disabled)::after {
+  transform: skewX(-45deg) scale(1, 1);
+}
+
+/* 点击后 2s 动画阶段：白底滑入（用 2s） */
+.send-code-btn.animating {
+  color: black;
+}
+.send-code-btn.animating::after {
+  transition-duration: 2s;
+  transform: skewX(-45deg) scale(1, 1);
+}
+
+/* 1s 后 Sending... 阶段：保持白底 */
+.send-code-btn.sending {
+  color: black;
+}
+.send-code-btn.sending::after {
+  transform: skewX(-45deg) scale(1, 1);
+}
+
+/* 倒计时阶段：保持白底 */
+.send-code-btn.counting {
+  color: black;
+}
+.send-code-btn.counting::after {
+  transform: skewX(-45deg) scale(1, 1);
+}
+
+/* 禁用默认（如果以后有其它禁用原因） */
 .send-code-btn:disabled {
   color: #9ca3af;
   cursor: not-allowed;
   background: #4b5563;
   opacity: 0.6;
 }
+.send-code-btn:disabled::after {
+  display: none;
+}
 
-/* 倒计时期间禁用状态的特殊样式 */
+/* 但 animating / sending / counting 期间禁用也要“白底”显示 */
+.send-code-btn.animating:disabled,
+.send-code-btn.sending:disabled,
 .send-code-btn.counting:disabled {
   color: black;
   background: black;
   opacity: 1;
-  cursor: not-allowed;
 }
-
-.send-code-btn:disabled:after {
-  display: none;
-}
-
-.send-code-btn.counting:disabled:after {
+.send-code-btn.animating:disabled::after,
+.send-code-btn.sending:disabled::after,
+.send-code-btn.counting:disabled::after {
   display: block;
   transform: skewX(-45deg) scale(1, 1);
 }

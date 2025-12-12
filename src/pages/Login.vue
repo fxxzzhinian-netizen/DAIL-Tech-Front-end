@@ -17,16 +17,69 @@
           <!-- Redefining AI Possibilities -->
         </div>
 
-        <!-- <div class="founded-days">
-          <span class="founded-inline founded-inline--brand">DAIL Tech</span>
-          <span class="founded-inline founded-inline--text">has been founded for</span>
-          <span class="founded-inline founded-inline--days">
-            <span class="days-number">{{ foundedDays }}</span>
-            <span class="days-label">days</span>
-            <span class="hours-number">{{ foundedHours }}</span>
-            <span class="hours-label">Hours</span>
-          </span>
-        </div> -->
+        <template v-if="showLeftText">
+          <!-- 第一段：Founded -->
+          <div class="founded-days left-baseline left-enter" :class="{ on: foundedEnterOn }">
+            <span class="founded-inline founded-inline--brand reveal" :class="{ show: foundedRevealOn }">
+              DAIL Tech
+            </span>
+
+            <span
+              class="founded-inline founded-inline--text reveal"
+              :class="{ show: foundedRevealOn }"
+              style="transition-delay:.12s"
+            >
+              has been founded for
+            </span>
+
+            <span class="founded-inline founded-inline--days">
+              <span class="days-number count-up reveal" :class="{ show: foundedNumOn }">
+                {{ animatedDaysFounded }}
+              </span>
+
+              <span
+                class="days-label reveal"
+                :class="{ show: foundedRevealOn }"
+                style="transition-delay:.18s"
+              >days</span>
+
+              <span class="hours-number count-up reveal" :class="{ show: foundedNumOn }" style="margin-left:32px">
+                {{ animatedHoursFounded }}
+              </span>
+
+              <span
+                class="hours-label reveal"
+                :class="{ show: foundedRevealOn }"
+                style="transition-delay:.22s"
+              >Hours</span>
+            </span>
+          </div>
+
+          <!-- 第二段：Welcome -->
+          <div class="welcome-block left-baseline left-enter" :class="{ on: welcomeEnterOn }">
+            <div
+              class="welcome-line reveal"
+              :class="{ show: welcomeRevealOn }"
+              style="transition-delay:0s"
+            >
+              Welcome to DAIL Tech
+              <span class="welcome-name">{{ displayName }}</span>
+            </div>
+
+            <div
+              class="welcome-days reveal"
+              :class="{ show: welcomeRevealOn }"
+              style="transition-delay:.12s"
+            >
+              It's your
+              <span class="welcome-days-number count-up reveal" :class="{ show: welcomeNumOn }">
+                {{ animatedDaysWelcome }}
+              </span>
+              <span class="welcome-days-label">days</span>
+              in DAIL
+            </div>
+          </div>
+        </template>
       </div>
     </div>
 
@@ -37,12 +90,12 @@
         <p class="subtitle fade-in-up" :class="{ 'animate': isMounted }">Modern. Secure. AI-native workspace.</p>
 
          <form class="form" @submit.prevent="handleSubmit">
-           <div class="form-control fade-in-up" :class="{ 'animate': isMounted, filled: !!email }">
+           <div class="form-control fade-in-up" :class="{ 'animate': isMounted, filled: !!phone }">
              <input
-               v-model="email"
-               type="email"
+               v-model="phone"
+               type="tel"
                required
-               autocomplete="off"
+               autocomplete="tel"
              />
              <label>
                <span style="transition-delay:0ms">P</span>
@@ -96,20 +149,181 @@
         </div>
       </div>
     </div>
+
+    <!-- 过渡层：Sign In 后出现 -->
+    <div v-if="isTransitioning" class="transition-overlay">
+      <!-- 黑色从左到右覆盖 -->
+      <div class="transition-cover" :class="{ run: overlayRun }"></div>
+
+      <!-- 白色文字阶段 -->
+      <div class="transition-stage">
+        <!-- 第一段：Founded（白色） -->
+        <template v-if="overlayPhase === 'founded'">
+          <div
+            class="founded-days left-baseline left-enter"
+            :class="[{ on: foundedEnterOn }, { 'phase-out': foundedOutOn }]"
+          >
+            <span class="founded-inline founded-inline--brand reveal" :class="{ show: foundedRevealOn }">
+              DAIL Tech
+            </span>
+
+            <span
+              class="founded-inline founded-inline--text reveal"
+              :class="{ show: foundedRevealOn }"
+              style="transition-delay:.12s"
+            >
+              has been founded for
+            </span>
+
+            <span class="founded-inline founded-inline--days">
+              <span class="days-number count-up reveal" :class="{ show: foundedNumOn }">
+                {{ animatedDaysFounded }}
+              </span>
+
+              <span
+                class="days-label reveal"
+                :class="{ show: foundedRevealOn }"
+                style="transition-delay:.18s"
+              >days</span>
+
+              <span class="hours-number count-up reveal" :class="{ show: foundedNumOn }" style="margin-left:32px">
+                {{ animatedHoursFounded }}
+              </span>
+
+              <span
+                class="hours-label reveal"
+                :class="{ show: foundedRevealOn }"
+                style="transition-delay:.22s"
+              >Hours</span>
+            </span>
+          </div>
+        </template>
+
+        <!-- 第二段：Welcome（只保留 days 这一行） -->
+        <template v-else-if="overlayPhase === 'welcome'">
+          <div
+            class="welcome-block left-baseline left-enter"
+            :class="[{ on: welcomeEnterOn }, { 'phase-out': welcomeOutOn }]"
+          >
+            <div
+              class="welcome-days reveal"
+              :class="{ show: welcomeRevealOn }"
+              style="transition-delay:0s"
+            >
+              It's your
+              <span class="welcome-days-number count-up reveal" :class="{ show: welcomeNumOn }">
+                {{ animatedDaysWelcome }}
+              </span>
+              <span class="welcome-days-label">days</span>
+              in DAIL
+            </div>
+          </div>
+        </template>
+
+        <!-- Final：屏幕中心出现 Welcome + Guest -->
+        <template v-else-if="overlayPhase === 'final'">
+          <div class="final-center final-enter" :class="{ on: finalEnterOn }">
+            <div
+              class="welcome-line reveal"
+              :class="{ show: finalRevealOn }"
+              style="transition-delay:0s"
+            >
+              Welcome to DAIL Tech
+            </div>
+            <div
+              class="welcome-name reveal"
+              :class="{ show: finalRevealOn }"
+              style="transition-delay:.12s"
+            >
+              {{ displayName }}
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- 白色逐渐覆盖全屏 -->
+      <div class="transition-white" :class="{ on: whiteCoverOn }"></div>
+    </div>
   </section>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import bgVideo from '@/assets/images/section4.webm'
 
-const email = ref('')
+const API_BASE = 'http://43.160.245.84:8000'
+
+function parseApiDate(s) {
+  if (!s) return null
+  // created_at 这种不带时区的字符串，统一当 UTC 处理，避免浏览器本地时区导致天数偏差
+  const hasTz = /Z$|[+-]\d{2}:\d{2}$/.test(s)
+  return new Date(hasTz ? s : `${s}Z`)
+}
+
+async function postJson(path, body) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+  let data = null
+  try { data = await res.json() } catch (e) {}
+
+  if (!res.ok) {
+    const msg =
+      data?.detail ||
+      data?.message ||
+      (typeof data === 'string' ? data : null) ||
+      `Request failed (${res.status})`
+    throw new Error(msg)
+  }
+
+  return data
+}
+
+const router = useRouter()
+
+const phone = ref('')
 const password = ref('')
 const remember = ref(true)
 const isMounted = ref(false)
+const showLeftText = ref(false)
+
+// 第一段
+const foundedEnterOn = ref(false)
+const foundedRevealOn = ref(false)
+const foundedNumOn = ref(false)
+const animatedDaysFounded = ref(0)
+const animatedHoursFounded = ref(0)
+
+// 第二段
+const welcomeEnterOn = ref(false)
+const welcomeRevealOn = ref(false)
+const welcomeNumOn = ref(false)
+const animatedDaysWelcome = ref(0)
+
+// 用来清理定时器，避免重复点击叠加
+let introTimers = []
+const clearIntroTimers = () => {
+  introTimers.forEach((t) => clearTimeout(t))
+  introTimers = []
+}
+
+// 过渡控制变量
+const isTransitioning = ref(false)
+const overlayRun = ref(false)
+const overlayPhase = ref('none') // 'none' | 'founded' | 'welcome' | 'final'
+const foundedOutOn = ref(false)
+const welcomeOutOn = ref(false)
+const finalEnterOn = ref(false)
+const finalRevealOn = ref(false)
+const whiteCoverOn = ref(false)
 
 // 计算创办天数：创始日 2024年1月28日
 const foundedTimestamp = new Date('2024-01-28T00:00:00').getTime()
+const DAY_MS = 1000 * 60 * 60 * 24
 
 const foundedDays = computed(() => {
   const diffTime = Date.now() - foundedTimestamp
@@ -124,8 +338,238 @@ const foundedHours = computed(() => {
   return diffHours
 })
 
-const handleSubmit = () => {
-  console.log('Sign in', { email: email.value, password: password.value, remember: remember.value })
+// “days in DAIL” = 注册时间(created_at) 到现在(Date.now()) 的整天数
+const welcomeDays = computed(() => {
+  const created = parseApiDate(currentCreatedAt.value)
+  if (!created) return 0
+  const diff = Date.now() - created.getTime()
+  return Math.max(0, Math.floor(diff / DAY_MS))
+})
+
+// 登录态
+const currentUsername = ref('')
+const currentCreatedAt = ref('') // API 返回的 created_at 字符串
+
+// 登录人姓名：缺省为 Guest；登录成功后自动变成 username
+const displayName = computed(() => currentUsername.value || 'Guest')
+
+function animateNumber(targetRef, to, duration = 1200) {
+  const from = 0
+  const start = performance.now()
+  function tick(now) {
+    const t = Math.min(1, (now - start) / duration)
+    const eased = 1 - Math.pow(1 - t, 3) // easeOutCubic
+    targetRef.value = Math.floor(from + (to - from) * eased)
+    if (t < 1) requestAnimationFrame(tick)
+    else targetRef.value = to
+  }
+  targetRef.value = 0
+  requestAnimationFrame(tick)
+}
+
+async function runLeftIntro() {
+  clearIntroTimers()
+
+  // 重播：全部归零/关闭
+  showLeftText.value = false
+
+  foundedEnterOn.value = false
+  foundedRevealOn.value = false
+  foundedNumOn.value = false
+  animatedDaysFounded.value = 0
+  animatedHoursFounded.value = 0
+
+  welcomeEnterOn.value = false
+  welcomeRevealOn.value = false
+  welcomeNumOn.value = false
+  animatedDaysWelcome.value = 0
+
+  await nextTick()
+  showLeftText.value = true
+  await nextTick()
+
+  requestAnimationFrame(() => {
+    // ===== 第一段：Founded =====
+    foundedEnterOn.value = true
+
+    introTimers.push(setTimeout(() => {
+      foundedRevealOn.value = true          // 文字按 delay 依次出现
+    }, 600))
+
+    introTimers.push(setTimeout(() => {
+      foundedNumOn.value = true            // 数字最后出现
+      animateNumber(animatedDaysFounded, foundedDays.value, 2000)
+      animateNumber(animatedHoursFounded, foundedHours.value, 1800)
+    }, 600 + 1500)) // 文字基本完成后再出数字
+
+    // ===== 第二段：Welcome（等第一段数字跑完再开始）=====
+    const tWelcomeStart = 400 + 1500 + 2000 + 600 // 额外增加间隔增强仪式感
+
+    introTimers.push(setTimeout(() => {
+      welcomeEnterOn.value = true
+    }, tWelcomeStart))
+
+    introTimers.push(setTimeout(() => {
+      welcomeRevealOn.value = true         // Welcome 文字依次出现
+    }, tWelcomeStart + 300))
+
+    introTimers.push(setTimeout(() => {
+      welcomeNumOn.value = true            // Welcome 数字最后出现
+      animateNumber(animatedDaysWelcome, welcomeDays.value, 1800)
+    }, tWelcomeStart + 300 + 1300))
+  })
+}
+
+async function runSignInTransition() {
+  clearIntroTimers()
+
+  // 不在左侧面板播（避免重复），这次在 overlay 播
+  showLeftText.value = false
+
+  // 归零（复用你原来的动画状态）
+  foundedEnterOn.value = false
+  foundedRevealOn.value = false
+  foundedNumOn.value = false
+  animatedDaysFounded.value = 0
+  animatedHoursFounded.value = 0
+  foundedOutOn.value = false
+
+  welcomeEnterOn.value = false
+  welcomeRevealOn.value = false
+  welcomeNumOn.value = false
+  animatedDaysWelcome.value = 0
+  welcomeOutOn.value = false
+  finalEnterOn.value = false
+  finalRevealOn.value = false
+  whiteCoverOn.value = false
+
+  // 打开 overlay
+  isTransitioning.value = true
+  overlayRun.value = false
+  overlayPhase.value = 'none'
+  await nextTick()
+
+  // 黑幕横扫
+  requestAnimationFrame(() => {
+    overlayRun.value = true
+  })
+
+  const COVER_MS = 900
+  const FOUND_REVEAL_DELAY = 320
+  const FOUND_NUM_DELAY = 1400
+  const FOUND_NUM_RUN = 2000
+  const FOUND_HOLD = 350
+  const FOUND_FADE_OUT = 650
+
+  const WELCOME_REVEAL_DELAY = 260
+  const WELCOME_NUM_DELAY = 1100
+  const WELCOME_NUM_RUN = 1800
+  const WELCOME_HOLD = 300
+
+  // 黑幕盖满后，播 Founded
+  introTimers.push(setTimeout(() => {
+    overlayPhase.value = 'founded'
+    foundedOutOn.value = false
+
+    foundedEnterOn.value = true
+
+    introTimers.push(setTimeout(() => {
+      foundedRevealOn.value = true
+    }, FOUND_REVEAL_DELAY))
+
+    introTimers.push(setTimeout(() => {
+      foundedNumOn.value = true
+      animateNumber(animatedDaysFounded, foundedDays.value, FOUND_NUM_RUN)
+      animateNumber(animatedHoursFounded, foundedHours.value, 1800)
+    }, FOUND_NUM_DELAY))
+
+    // Founded 完成后淡出
+    const tFoundedEnd = FOUND_NUM_DELAY + FOUND_NUM_RUN + FOUND_HOLD
+    introTimers.push(setTimeout(() => {
+      foundedOutOn.value = true
+    }, tFoundedEnd))
+
+    // 淡出结束后，播 Welcome（只保留 days 行） -> 淡出 -> Final(居中) -> 白色覆盖 -> 跳转
+    introTimers.push(setTimeout(() => {
+      overlayPhase.value = 'welcome'
+      welcomeOutOn.value = false
+
+      // 重置 founded（可选）
+      foundedEnterOn.value = false
+      foundedRevealOn.value = false
+      foundedNumOn.value = false
+
+      // Welcome days 行
+      welcomeEnterOn.value = true
+      introTimers.push(setTimeout(() => {
+        welcomeRevealOn.value = true
+      }, WELCOME_REVEAL_DELAY))
+
+      introTimers.push(setTimeout(() => {
+        welcomeNumOn.value = true
+        animateNumber(animatedDaysWelcome, welcomeDays.value, WELCOME_NUM_RUN)
+      }, WELCOME_NUM_DELAY))
+
+      // Welcome days 行结束后淡出
+      const WELCOME_FADE_OUT = 650
+      const tWelcomeEnd = WELCOME_NUM_DELAY + WELCOME_NUM_RUN + WELCOME_HOLD
+
+      introTimers.push(setTimeout(() => {
+        welcomeOutOn.value = true
+      }, tWelcomeEnd))
+
+      // 淡出后进入 Final（居中 Welcome + Guest）
+      introTimers.push(setTimeout(() => {
+        overlayPhase.value = 'final'
+        finalEnterOn.value = true
+
+        // 让 final 使用自己的 reveal（稍微放慢）
+        introTimers.push(setTimeout(() => {
+          finalRevealOn.value = true
+        }, 450))
+
+        // Final 显示更久，再白色覆盖
+        const WHITE_FADE_MS = 1500
+        const FINAL_HOLD_BEFORE_WHITE = 1500
+
+        introTimers.push(setTimeout(() => {
+          whiteCoverOn.value = true
+        }, 450 + FINAL_HOLD_BEFORE_WHITE))
+
+        // 白色盖满后跳转
+        introTimers.push(setTimeout(() => {
+          router.push('/home')
+        }, 450 + FINAL_HOLD_BEFORE_WHITE + WHITE_FADE_MS))
+      }, tWelcomeEnd + WELCOME_FADE_OUT))
+    }, tFoundedEnd + FOUND_FADE_OUT))
+  }, COVER_MS))
+}
+
+const handleSubmit = async () => {
+  try {
+    const payload = {
+      phone: phone.value.trim(),
+      password: password.value,
+    }
+
+    const resp = await postJson('/api/auth/login', payload)
+
+    // 1) 用返回值替换 Guest
+    currentUsername.value = resp?.username || ''
+    currentCreatedAt.value = resp?.created_at || ''
+
+    // 2) 存 token（按 Remember me 存 localStorage / sessionStorage）
+    const storage = remember.value ? localStorage : sessionStorage
+    if (resp?.access_token) storage.setItem('access_token', resp.access_token)
+    if (resp?.refresh_token) storage.setItem('refresh_token', resp.refresh_token)
+    storage.setItem('username', currentUsername.value)
+    storage.setItem('created_at', currentCreatedAt.value)
+
+    // 3) 登录成功后跑你现有的转场
+    runSignInTransition()
+  } catch (err) {
+    alert(err?.message || 'Login failed')
+  }
 }
 
 onMounted(() => {
@@ -213,9 +657,9 @@ onMounted(() => {
 
 .founded-days {
   position: absolute;
-  top: 28%;
-  left: 40%;
-  transform: translate(-50%, -50%);
+  top: 14%;
+  left: 96px;
+  transform: none;
   z-index: 2;
 
   display: flex;
@@ -271,6 +715,124 @@ onMounted(() => {
   letter-spacing: 0.08em;
 }
 
+.welcome-block {
+  position: absolute;
+  top: 58%;
+  left: 96px;
+  transform: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: #0f172a;
+  z-index: 2;
+}
+
+.welcome-line {
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.welcome-name {
+  font-size: 124px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.welcome-days {
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  margin-top: 16px;
+}
+
+.welcome-days-number {
+  font-size: 94px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.welcome-days-label {
+  margin-left: 6px;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.left-enter {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 2.4s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 2.4s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.left-enter.on {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 打字机效果 */
+/* 打字机效果（暂未使用） */
+.typing-line {
+  overflow: hidden;
+  white-space: nowrap;
+  width: 0;
+  opacity: 0;
+}
+
+.typing-line.typing-run {
+  animation: typing 1.2s steps(var(--chars)) forwards,
+             fadeIn 0.2s ease forwards;
+}
+
+.typing-line--slow.typing-run {
+  animation-duration: 1.5s;
+}
+
+@keyframes typing {
+  from { width: 0; opacity: 1; }
+  to { width: 100%; opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 非数字部分渐显（增强仪式感） */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 1.9s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 1.9s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal.show {
+  opacity: 1;
+  transform: translateY(0px);
+}
+
+/* 数字加强占位，便于动画 */
+.count-up {
+  will-change: contents;
+}
+
+.days-number.reveal,
+.hours-number.reveal,
+.welcome-days-number.reveal {
+  display: inline-block;
+}
+
+/* 统一左侧内容基线 */
+.left-baseline {
+  left: 96px;
+  transform: none;
+}
 .hours-number {
   margin-left: 32px;
   font-size: 67px;
@@ -586,5 +1148,123 @@ onMounted(() => {
   }
   .title { font-size: 24px; }
   .subtitle { font-size: 13px; }
+}
+
+/* ===== Sign In 过渡层（全屏） ===== */
+.transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: all; /* 防止重复点击 */
+}
+
+/* 黑幕从左到右覆盖 */
+.transition-cover {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  transform: translateX(-100%);
+  z-index: 1;
+}
+
+.transition-cover.run {
+  animation: sweep-cover 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes sweep-cover {
+  to { transform: translateX(0); }
+}
+
+/* 承载白字内容（在黑幕上层） */
+.transition-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+/* 只在 overlay 内，把两段文字变白 */
+.transition-overlay .founded-days,
+.transition-overlay .welcome-block {
+  color: #fff;
+}
+
+/* Founded 淡出（第一段结束后） */
+.transition-overlay .phase-out {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+
+/* Welcome days 行淡出（第二幕末尾） */
+.transition-overlay .welcome-block.phase-out {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+
+/* Final 居中容器（真正居中） */
+.final-center {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  width: min(980px, 90vw);
+  text-align: center;
+  color: #fff;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+
+  /* 关键：居中 */
+  transform: translate(-50%, -50%);
+}
+
+/* Final 专用入场动画（不会覆盖居中 transform） */
+.final-enter {
+  opacity: 0;
+  transform: translate(-50%, -50%) translateY(28px);
+  transition: opacity 1.6s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 1.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.final-enter.on {
+  opacity: 1;
+  transform: translate(-50%, -50%) translateY(0);
+}
+
+/* welcome-line 原本是 flex，强制居中 */
+.transition-overlay .final-center .welcome-line {
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Guest 居中且继承白色 */
+.transition-overlay .final-center .welcome-name {
+  color: inherit;
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+/* 白色从左到右覆盖全屏（在最上层） */
+.transition-white {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: #fff;
+  pointer-events: none;
+
+  transform: translateX(-100%);
+}
+
+.transition-white.on {
+  animation: sweep-white 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes sweep-white {
+  to { transform: translateX(0); }
 }
 </style>
