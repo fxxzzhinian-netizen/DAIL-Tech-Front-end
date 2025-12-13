@@ -11,10 +11,11 @@
         <!-- Sidebar -->
         <aside class="sidebar">
   
-          <nav class="nav fade-in-up" :class="{ animate: isMounted }" aria-label="User navigation">
+          <nav class="nav" aria-label="User navigation">
             <button
-              class="nav-item"
-              :class="{ active: activeTab === 'profile' }"
+              class="nav-item float-in"
+              :style="{ '--d': '80ms' }"
+              :class="{ active: activeTab === 'profile', animate: isMounted }"
               @click="activeTab = 'profile'"
               type="button"
             >
@@ -23,8 +24,9 @@
             </button>
   
             <button
-              class="nav-item"
-              :class="{ active: activeTab === 'dominate' }"
+              class="nav-item float-in"
+              :style="{ '--d': '140ms' }"
+              :class="{ active: activeTab === 'dominate', animate: isMounted }"
               @click="activeTab = 'dominate'"
               type="button"
             >
@@ -33,12 +35,12 @@
             </button>
           </nav>
   
-          <div class="sidebar-footer fade-in-up" :class="{ animate: isMounted }">
+          <div class="sidebar-footer">
             <!-- Stepper（替换原 meta 卡片） -->
-            <div class="stepper-wrapper">
+            <div class="stepper-wrapper float-in" :style="{ '--d': '220ms' }" :class="{ animate: isMounted }">
               <div class="stepper">
                 <!-- 1: Account -->
-                <div class="stepper-step is-done">
+                <div class="stepper-step is-done float-in" :style="{ '--d': '240ms' }" :class="{ animate: isMounted }">
                   <div class="stepper-circle" aria-hidden="true">
                     <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14" xmlns="http://www.w3.org/2000/svg">
                       <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"></path>
@@ -52,7 +54,7 @@
                 </div>
 
                 <!-- 2: Progress -->
-                <div class="stepper-step is-active">
+                <div class="stepper-step is-active float-in" :style="{ '--d': '300ms' }" :class="{ animate: isMounted }">
                   <div class="stepper-circle" aria-hidden="true">2</div>
                   <div class="stepper-line"></div>
                   <div class="stepper-content">
@@ -62,17 +64,23 @@
                 </div>
 
                 <!-- 3: Dominate -->
-                <div class="stepper-step is-pending">
+                <div class="stepper-step is-pending float-in" :style="{ '--d': '360ms' }" :class="{ animate: isMounted }">
                   <div class="stepper-circle" aria-hidden="true">3</div>
                   <div class="stepper-content">
                     <div class="stepper-title">Dominate</div>
                     <div class="stepper-sub">Reserved</div>
                   </div>
-                </div>
+              </div>
               </div>
             </div>
-
-            <button class="ghost-btn" type="button" @click="handleLogout">
+  
+            <button
+              class="ghost-btn float-in"
+              :style="{ '--d': '420ms' }"
+              :class="{ animate: isMounted }"
+              type="button"
+              @click="handleLogout"
+            >
               Logout
             </button>
           </div>
@@ -81,11 +89,11 @@
         <!-- Content -->
         <main class="content">
           <!-- 顶部标题 -->
-          <header class="content-header fade-in-up" :class="{ animate: isMounted }">
-            <h2 class="content-title">
+          <header class="content-header">
+            <h2 class="content-title float-in" :style="{ '--d': '80ms' }" :class="{ animate: contentAnimate }">
               {{ activeTab === 'profile' ? 'PROFILE' : 'DOMINATE' }}
             </h2>
-            <p class="content-subtitle">
+            <p class="content-subtitle float-in" :style="{ '--d': '140ms' }" :class="{ animate: contentAnimate }">
               <template v-if="activeTab === 'profile'">
                 Manage your basic account information.
               </template>
@@ -96,10 +104,10 @@
           </header>
   
           <!-- Profile -->
-          <section v-if="activeTab === 'profile'" class="panel fade-in-up" :class="{ animate: isMounted }">
+          <section v-if="activeTab === 'profile'" class="panel">
             <div class="profile-cards">
               <!-- Profile photo -->
-              <div class="info-card">
+              <div class="info-card float-in" :style="{ '--d': '220ms' }" :class="{ animate: contentAnimate }">
                 <div class="info-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2-2h6l2 2h4a2 2 0 0 1 2 2z"/>
@@ -111,12 +119,12 @@
                   <div class="info-title">Profile photo</div>
                   <div class="info-sub">Add a profile photo to personalize your account.</div>
                 </div>
-
+  
                 <div class="avatar" aria-label="Avatar">{{ avatarLetter }}</div>
-              </div>
-
+                </div>
+  
               <!-- Name -->
-              <div class="info-card">
+              <div class="info-card float-in" :style="{ '--d': '280ms' }" :class="{ animate: contentAnimate }">
                 <div class="info-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M22 12v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>
@@ -126,15 +134,15 @@
                     <path d="M6 17c.6-1.6 2-2.5 4-2.5s3.4.9 4 2.5"/>
                   </svg>
                 </div>
-
+  
                 <div class="info-body">
                   <div class="info-title">Name</div>
                   <div class="info-value">{{ profileName }}</div>
                 </div>
-              </div>
+                  </div>
 
               <!-- Birthday -->
-              <div class="info-card">
+              <div class="info-card float-in" :style="{ '--d': '340ms' }" :class="{ animate: contentAnimate }">
                 <div class="info-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 21H4v-7a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4z"/>
@@ -143,24 +151,24 @@
                     <path d="M8 10v-1"/>
                     <path d="M16 10v-1"/>
                   </svg>
-                </div>
+                  </div>
 
                 <div class="info-body">
                   <div class="info-title">Birthday</div>
                   <div class="info-value">{{ birthdayText }}</div>
+                  </div>
                 </div>
-              </div>
 
               <!-- Email -->
-              <div class="info-card">
+              <div class="info-card float-in" :style="{ '--d': '400ms' }" :class="{ animate: contentAnimate }">
                 <div class="info-icon" aria-hidden="true">
                   <!-- mail -->
                   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
                     <path d="m22 6-10 7L2 6"/>
                   </svg>
-                </div>
-
+              </div>
+  
                 <div class="info-body">
                   <div class="info-title">Email</div>
                   <div class="info-value">{{ emailText }}</div>
@@ -170,15 +178,15 @@
           </section>
   
           <!-- Dominate -->
-          <section v-else class="panel fade-in-up" :class="{ animate: isMounted }">
+          <section v-else class="panel">
             <div class="panel-inner">
               <div class="placeholder">
-                <div class="placeholder-title">Coming soon</div>
-                <div class="placeholder-text">
+                <div class="placeholder-title float-in" :style="{ '--d': '200ms' }" :class="{ animate: contentAnimate }">Coming soon</div>
+                <div class="placeholder-text float-in" :style="{ '--d': '260ms' }" :class="{ animate: contentAnimate }">
                   This section is reserved for permission management:
                   roles, policies, access scopes, audit logs, and admin tools.
                 </div>
-                <div class="placeholder-hint">
+                <div class="placeholder-hint float-in" :style="{ '--d': '320ms' }" :class="{ animate: contentAnimate }">
                   You can keep the tab now and wire it to your RBAC / ABAC later.
                 </div>
               </div>
@@ -190,7 +198,7 @@
   </template>
   
   <script setup>
-  import { ref, computed, onMounted } from 'vue'
+  import { ref, computed, onMounted, watch, nextTick } from 'vue'
   import { useRouter } from 'vue-router'
   import { useUserStore } from '@/stores/user'
   import bgVideo from '@/assets/images/section4.webm'
@@ -199,6 +207,7 @@
   const userStore = useUserStore()
   
   const isMounted = ref(false)
+  const contentAnimate = ref(false)
   const activeTab = ref('profile') // 'profile' | 'dominate'
   
   function parseApiDate(s) {
@@ -241,7 +250,7 @@
     userStore.birthday || userStore.birthdate || userStore.birth_day || ''
   )
   const birthdayText = computed(() => birthdayRaw.value || 'Not set')
-
+  
   /** Profile 表单（先做本地 + store patch，后续你接 API 再替换） */
   const profileName = ref(displayName.value)
   const profilePhone = ref(userStore.phone || '')
@@ -269,14 +278,23 @@
   }
   
   function handleLogout() {
-    userStore.logout()
+      userStore.logout()
     router.push('/login')
   }
   
   onMounted(() => {
     setTimeout(() => {
       isMounted.value = true
+      contentAnimate.value = true
     }, 80)
+  })
+
+  watch(activeTab, async () => {
+    contentAnimate.value = false
+    await nextTick()
+    requestAnimationFrame(() => {
+      contentAnimate.value = true
+    })
   })
   </script>
   
@@ -287,7 +305,7 @@
     background: #fff;
     overflow: hidden;
   }
-
+  
   /* 只占左侧部分 */
   .bg-layer {
     position: absolute;
@@ -299,7 +317,7 @@
     z-index: 0;
     pointer-events: none;
   }
-
+  
   .bg-video {
     position: absolute;
     inset: 0;
@@ -308,7 +326,7 @@
     object-fit: cover;
     filter: saturate(1.05);
   }
-
+  
   /* 让右边缘柔和过渡到白底 */
   .bg-mask {
     position: absolute;
@@ -399,32 +417,6 @@
     gap: 16px;
   }
   
-  .meta {
-    padding: 14px 14px;
-    border-radius: 16px;
-    background: rgba(255,255,255,0.55);
-    border: 1px solid rgba(0,0,0,0.08);
-  }
-  
-  .meta-line {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    font-size: 14px;
-    padding: 6px 0;
-  }
-  
-  .meta-k {
-    color: #6b7280;
-    letter-spacing: 0.04em;
-  }
-  
-  .meta-v {
-    color: #0f172a;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-  }
-  
   .ghost-btn {
     width: 100%;
     border: 1px solid rgba(0,0,0,0.12);
@@ -437,7 +429,7 @@
     color: #000000;
     transition: all 0.3s ease;
   }
-
+  
   .ghost-btn:hover,
   .ghost-btn:active {
     transform: translateY(-1px);
@@ -516,20 +508,6 @@
     letter-spacing: 0.02em;
   }
   
-  /* 入场动画（同你 login 页的节奏） */
-  .fade-in-up {
-    opacity: 0;
-    transform: translateY(30px);
-    will-change: opacity, transform;
-    transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-  
-  .fade-in-up.animate {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
   .profile-cards {
     display: flex;
     flex-direction: column;
@@ -725,6 +703,34 @@
 
   .stepper-step.is-pending .stepper-sub {
     color: rgba(15, 23, 42, 0.40);
+  }
+
+  /* 通用浮现：黑白风格（不抢 hover 的质感） */
+  .float-in {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+    filter: blur(6px);
+    transition:
+      opacity 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+      transform 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+      filter 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transition-delay: var(--d, 0ms);
+    will-change: opacity, transform, filter;
+  }
+
+  .float-in.animate {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    filter: blur(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .float-in {
+      transition: none;
+    opacity: 1;
+      transform: none;
+      filter: none;
+    }
   }
   </style>
   
