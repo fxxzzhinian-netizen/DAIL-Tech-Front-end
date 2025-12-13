@@ -36,6 +36,25 @@ userStore.init()
 // 提供给子组件，通知过场动画已结束
 provide('loaderFinished', loaderFinished)
 
+// 提供给子组件：显示 LoaderOverlay 一段时间后执行回调
+// 用法：showLoaderFor(1000, () => { ... })
+const showLoaderFor = (ms = 1000, cb) => {
+  showLoader.value = true
+  loaderFinished.value = false
+  setTimeout(() => {
+    try {
+      cb?.()
+    } finally {
+      showLoader.value = false
+      // 通知过场动画已结束，可以开始页面动画
+      setTimeout(() => {
+        loaderFinished.value = true
+      }, 50)
+    }
+  }, Number(ms) || 0)
+}
+provide('showLoaderFor', showLoaderFor)
+
 const handleNavigateHome = () => {
   // 显示过场动画
   showLoader.value = true

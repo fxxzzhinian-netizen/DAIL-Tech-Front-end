@@ -10,29 +10,26 @@
   
           <h2 class="platform-title fade-in-up" :class="{ 'animate': isVisible }">
             <div class="title-row">
-              <span class="title-line title-line-first">AI-native power</span>
+              <span class="title-line title-line-first">{{ $t('platform.titleLine1') }}</span>
               <div class="floating-learn-more fade-in-up" :class="{ 'animate': isVisible }">
                 <button class="learn-more-button" type="button">
                   <span class="circle" aria-hidden="true">
                     <span class="icon arrow"></span>
                   </span>
-                  <span class="button-text">Cooperate with us</span>
+                  <span class="button-text">{{ $t('platform.cooperate') }}</span>
                 </button>
               </div>
             </div>
             <br />
-            <span class="title-line">Fused Seamlessly  Next-Generation Intelligence</span>
+            <span class="title-line">{{ $t('platform.titleLine2') }}</span>
           </h2>
   
           <p class="platform-subtitle fade-in-up" :class="{ 'animate': isVisible }">
-            From data governance and custom models to agentic applications and
-            full-stack platforms, DAIL Tech provides the AI enablement layer that
-            lets enterprises build, deploy, and scale real "AI + industry"
-            solutions without complexity.
+            {{ $t('platform.subtitle') }}
           </p>
   
           <button class="btn-primary fade-in-up" :class="{ 'animate': isVisible }">
-            Explore the stack
+            {{ $t('platform.explore') }}
           </button>
         </div>
   
@@ -46,39 +43,39 @@
       <div class="platform-grid fade-in-up" :class="{ 'animate': isVisible }">
         <div class="platform-grid-left">
           <div class="grid-card fade-in-up" :class="{ 'animate': isVisible }">
-            <img :src="oneIcon" alt="Data Governance" class="grid-icon" />
-            <div class="grid-title">Data Governance </div>
+            <img :src="oneIcon" :alt="$t('platform.card1.alt')" class="grid-icon" />
+            <div class="grid-title">{{ $t('platform.card1.title') }}</div>
             <div class="grid-desc">
-              Clean, compliant, and traceable data pipelines that feed every downstream AI system.
+              {{ $t('platform.card1.desc') }}
             </div>
-            <div class="grid-learn-more">Learn more <span class="learn-arrow">→</span></div>
+            <div class="grid-learn-more">{{ $t('platform.learnMore') }} <span class="learn-arrow">→</span></div>
           </div>
   
           <div class="grid-card fade-in-up" :class="{ 'animate': isVisible }">
-            <img :src="twoIcon" alt="Model Engineering" class="grid-icon" />
-            <div class="grid-title">Model Engineering </div>
+            <img :src="twoIcon" :alt="$t('platform.card2.alt')" class="grid-icon" />
+            <div class="grid-title">{{ $t('platform.card2.title') }}</div>
             <div class="grid-desc">
-              End-to-end MLOps / LLMOps for model selection, training, optimization, and deployment.
+              {{ $t('platform.card2.desc') }}
             </div>
-            <div class="grid-learn-more">Learn more <span class="learn-arrow">→</span></div>
+            <div class="grid-learn-more">{{ $t('platform.learnMore') }} <span class="learn-arrow">→</span></div>
           </div>
   
           <div class="grid-card fade-in-up" :class="{ 'animate': isVisible }">
-            <img :src="threeIcon" alt="Agent Development" class="grid-icon" />
-            <div class="grid-title">Agent Development </div>
+            <img :src="threeIcon" :alt="$t('platform.card3.alt')" class="grid-icon" />
+            <div class="grid-title">{{ $t('platform.card3.title') }}</div>
             <div class="grid-desc">
-              Turn core AI capabilities into robust, composable agents and digital co-workers that embed into real workflows.
+              {{ $t('platform.card3.desc') }}
             </div>
-            <div class="grid-learn-more">Learn more <span class="learn-arrow">→</span></div>
+            <div class="grid-learn-more">{{ $t('platform.learnMore') }} <span class="learn-arrow">→</span></div>
           </div>
   
           <div class="grid-card fade-in-up" :class="{ 'animate': isVisible }">
-            <img :src="fourIcon" alt="Platform Build" class="grid-icon" />
-            <div class="grid-title">Platform Build </div>
+            <img :src="fourIcon" :alt="$t('platform.card4.alt')" class="grid-icon" />
+            <div class="grid-title">{{ $t('platform.card4.title') }}</div>
             <div class="grid-desc">
-              Launch an AI-native platform that orchestrates data, models, and agents across your enterprise.
+              {{ $t('platform.card4.desc') }}
             </div>
-            <div class="grid-learn-more">Learn more <span class="learn-arrow">→</span></div>
+            <div class="grid-learn-more">{{ $t('platform.learnMore') }} <span class="learn-arrow">→</span></div>
           </div>
         </div>
       </div>

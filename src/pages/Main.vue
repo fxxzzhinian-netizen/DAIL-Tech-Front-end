@@ -12,22 +12,20 @@
       <div class="hero-inner">
         <div class="hero-left">
           <h1 class="hero-title fade-in-up" :class="{ 'animate': isMounted }">
-            Redefining what's possible
+            {{ t('hero.titleLine1') }}
             <br />
-            on the AI.
+            {{ t('hero.titleLine2') }}
           </h1>
           <p class="hero-subtitle fade-in-up" :class="{ 'animate': isMounted }">
-          From smart government copilots to legal compliance and medical AI-MDT,
-          DAIL Tech turns complex public-service workflows into reliable AI agents —
-          grounded on real data.
+          {{ t('hero.subtitle') }}
         </p>
           <div class="hero-actions fade-in-up" :class="{ 'animate': isMounted }">
             <button class="btn-primary">
-              Try DAIL
+              {{ t('hero.tryDail') }}
               <span class="icon-arrow">↗</span>
             </button>
             <button class="btn-ghost">
-              Download DAIL
+              {{ t('hero.downloadDail') }}
             </button>
           </div>
         </div>
@@ -45,7 +43,7 @@
                     ...heroImages[activeIndex].imgStyle,
                     objectPosition: heroImages[activeIndex].imgStyle.objectPosition || 'center center'
                   }"
-                  alt="Hero Device展示"
+                  :alt="t('hero.deviceAlt')"
                 />
               </Transition>
             </div>
@@ -57,7 +55,7 @@
               :class="heroImages[activeIndex].badgeInfo.position === 'left' ? 'pos-left' : 'pos-right'"
             >
               <span class="badge-text">
-                {{ heroImages[activeIndex].badgeInfo.text }}
+                {{ t(heroImages[activeIndex].badgeInfoKey) }}
               </span>
             </div>
           </Transition>
@@ -76,7 +74,7 @@
               </div>
               <div class="feature-index">01</div>
               <div class="feature-body">
-              <div class="feature-title">Smart Gov Copilot · Policy & Services</div>
+              <div class="feature-title">{{ t('hero.feature1') }}</div>
             </div>
             </div>
 
@@ -93,7 +91,7 @@
               <div class="feature-index">02</div>
               <div class="feature-body">
                 <div class="feature-title">
-                Legal Copilot · Contracts & Compliance
+                {{ t('hero.feature2') }}
               </div>
               </div>
             </div>
@@ -111,7 +109,7 @@
               <div class="feature-index">03</div>
               <div class="feature-body">
                 <div class="feature-title">
-                Medical Copilot · AI-MDT & Triage
+                {{ t('hero.feature3') }}
               </div>
               </div>
             </div>
@@ -123,12 +121,16 @@
   
   <script setup>
   import { ref, onMounted, onBeforeUnmount, inject, watch } from 'vue'
+  import { useI18nStore } from '@/stores/i18n'
   import hero1 from '@/assets/images/hero-1.png'
   import hero2 from '@/assets/images/hero-2.png'
   import hero3 from '@/assets/images/hero-3.png'
 
  // 背景视频（应用到整个 hero 区域）
  import bgVideo from '@/assets/images/section4.webm'
+
+const i18n = useI18nStore()
+const t = (key, vars) => i18n.t(key, vars)
 
 const heroImages = [
   {
@@ -140,10 +142,8 @@ const heroImages = [
       left: '50%',
       transform: 'translate(-52%, -50%)'
     },
-    badgeInfo: {
-      text: 'Smart Gov Copilot',
-      position: 'right'
-    }
+    badgeInfoKey: 'hero.badge1',
+    badgeInfo: { position: 'right' },
   },
   {
     src: hero2,
@@ -154,10 +154,8 @@ const heroImages = [
       left: '0',
       objectPosition: 'left top'
     },
-    badgeInfo: {
-      text: 'Legal Compliance Copilot',
-      position: 'right'
-    }
+    badgeInfoKey: 'hero.badge2',
+    badgeInfo: { position: 'right' },
   },
   {
     src: hero3,
@@ -168,10 +166,8 @@ const heroImages = [
       right: '0%',
       objectPosition: 'left top'
     },
-    badgeInfo: {
-      text: 'Medical AI-MDT Copilot',
-      position: 'left'
-    }
+    badgeInfoKey: 'hero.badge3',
+    badgeInfo: { position: 'left' },
   },
 ]
 
@@ -355,7 +351,7 @@ let timer = null
 
   .hero-title {
     font-size: 56px;
-    line-height: 1.05;
+    line-height: 1.2;
     letter-spacing: -0.03em;
     font-weight: 500;
     color: #111827;}

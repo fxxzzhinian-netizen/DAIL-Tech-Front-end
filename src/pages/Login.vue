@@ -29,7 +29,7 @@
               :class="{ show: foundedRevealOn }"
               style="transition-delay:.12s"
             >
-              has been founded for
+              {{ t('auth.foundedText') }}
             </span>
 
             <span class="founded-inline founded-inline--days">
@@ -41,7 +41,7 @@
                 class="days-label reveal"
                 :class="{ show: foundedRevealOn }"
                 style="transition-delay:.18s"
-              >days</span>
+              >{{ t('common.days') }}</span>
 
               <span class="hours-number count-up reveal" :class="{ show: foundedNumOn }" style="margin-left:32px">
                 {{ animatedHoursFounded }}
@@ -51,7 +51,7 @@
                 class="hours-label reveal"
                 :class="{ show: foundedRevealOn }"
                 style="transition-delay:.22s"
-              >Hours</span>
+              >{{ t('common.hours') }}</span>
             </span>
           </div>
 
@@ -62,7 +62,7 @@
               :class="{ show: welcomeRevealOn }"
               style="transition-delay:0s"
             >
-              Welcome to DAIL Tech
+              {{ t('auth.welcomeTo') }}
               <span class="welcome-name">{{ displayName }}</span>
             </div>
 
@@ -71,12 +71,12 @@
               :class="{ show: welcomeRevealOn }"
               style="transition-delay:.12s"
             >
-              It's your
+              {{ t('auth.welcomeDaysPrefix') }}
               <span class="welcome-days-number count-up reveal" :class="{ show: welcomeNumOn }">
                 {{ animatedDaysWelcome }}
               </span>
-              <span class="welcome-days-label">days</span>
-              in DAIL
+              <span class="welcome-days-label">{{ t('common.days') }}</span>
+              {{ t('auth.welcomeDaysSuffix') }}
             </div>
           </div>
         </template>
@@ -85,9 +85,8 @@
 
     <div class="panel right-panel">
       <div class="form-shell">
-        <!-- <div class="brand">DAIL Tech</div> -->
-        <h2 class="title fade-in-up" :class="{ 'animate': isMounted }">SIGN IN TO COUNTINUE</h2>
-        <p class="subtitle fade-in-up" :class="{ 'animate': isMounted }">Modern. Secure. AI-native workspace.</p>
+        <h2 class="title fade-in-up" :class="{ 'animate': isMounted }">{{ t('auth.signInTitle') }}</h2>
+        <p class="subtitle fade-in-up" :class="{ 'animate': isMounted }">{{ t('auth.signInSubtitle') }}</p>
 
          <form class="form" novalidate @submit.prevent="handleSubmit">
            <div class="form-control fade-in-up" :class="{ 'animate': isMounted, filled: !!phone }">
@@ -97,18 +96,13 @@
                autocomplete="tel"
              />
              <label>
-               <span style="transition-delay:0ms">P</span>
-               <span style="transition-delay:50ms">h</span>
-               <span style="transition-delay:100ms">o</span>
-               <span style="transition-delay:150ms">n</span>
-               <span style="transition-delay:200ms">e</span>
-               <span style="transition-delay:250ms">&nbsp;</span>
-               <span style="transition-delay:300ms">N</span>
-               <span style="transition-delay:350ms">u</span>
-               <span style="transition-delay:400ms">m</span>
-               <span style="transition-delay:450ms">b</span>
-               <span style="transition-delay:500ms">e</span>
-               <span style="transition-delay:550ms">r</span>
+               <span
+                 v-for="(ch, idx) in phoneNumberLabelChars"
+                 :key="`phone-${idx}-${ch}`"
+                 :style="{ 'transition-delay': `${idx * 50}ms` }"
+               >
+                 {{ ch }}
+               </span>
              </label>
            </div>
 
@@ -119,31 +113,30 @@
                autocomplete="off"
              />
              <label>
-               <span style="transition-delay:0ms">P</span>
-               <span style="transition-delay:50ms">a</span>
-               <span style="transition-delay:100ms">s</span>
-               <span style="transition-delay:150ms">s</span>
-               <span style="transition-delay:200ms">w</span>
-               <span style="transition-delay:250ms">o</span>
-               <span style="transition-delay:300ms">r</span>
-               <span style="transition-delay:350ms">d</span>
+               <span
+                 v-for="(ch, idx) in passwordLabelChars"
+                 :key="`pass-${idx}-${ch}`"
+                 :style="{ 'transition-delay': `${idx * 50}ms` }"
+               >
+                 {{ ch }}
+               </span>
              </label>
            </div>
 
           <div class="form-row fade-in-up" :class="{ 'animate': isMounted }">
             <label class="checkbox">
               <input v-model="remember" type="checkbox" />
-              <span>Remember me</span>
+              <span>{{ t('auth.rememberMe') }}</span>
             </label>
-            <button type="button" class="link-btn">Forgot password?</button>
+            <button type="button" class="link-btn">{{ t('auth.forgotPassword') }}</button>
           </div>
 
-          <button type="submit" class="primary-btn fade-in-up" :class="{ 'animate': isMounted }">Sign In</button>
+          <button type="submit" class="primary-btn fade-in-up" :class="{ 'animate': isMounted }">{{ t('auth.signIn') }}</button>
         </form>
 
         <div class="footer fade-in-up" :class="{ 'animate': isMounted }">
-          New to DAIL?
-          <router-link to="/register" class="footer-link">REGISTER NOW</router-link>
+          {{ t('auth.newToDail') }}
+          <router-link to="/register" class="footer-link">{{ t('auth.registerNow') }}</router-link>
         </div>
       </div>
     </div>
@@ -170,7 +163,7 @@
               :class="{ show: foundedRevealOn }"
               style="transition-delay:.12s"
             >
-              has been founded for
+              {{ t('auth.foundedText') }}
             </span>
 
             <span class="founded-inline founded-inline--days">
@@ -182,7 +175,7 @@
                 class="days-label reveal"
                 :class="{ show: foundedRevealOn }"
                 style="transition-delay:.18s"
-              >days</span>
+              >{{ t('common.days') }}</span>
 
               <span class="hours-number count-up reveal" :class="{ show: foundedNumOn }" style="margin-left:32px">
                 {{ animatedHoursFounded }}
@@ -192,7 +185,7 @@
                 class="hours-label reveal"
                 :class="{ show: foundedRevealOn }"
                 style="transition-delay:.22s"
-              >Hours</span>
+              >{{ t('common.hours') }}</span>
             </span>
           </div>
         </template>
@@ -208,12 +201,12 @@
               :class="{ show: welcomeRevealOn }"
               style="transition-delay:0s"
             >
-              It's your
+              {{ t('auth.welcomeDaysPrefix') }}
               <span class="welcome-days-number count-up reveal" :class="{ show: welcomeNumOn }">
                 {{ animatedDaysWelcome }}
               </span>
-              <span class="welcome-days-label">days</span>
-              in DAIL
+              <span class="welcome-days-label">{{ t('common.days') }}</span>
+              {{ t('auth.welcomeDaysSuffix') }}
             </div>
           </div>
         </template>
@@ -226,7 +219,7 @@
               :class="{ show: finalRevealOn }"
               style="transition-delay:0s"
             >
-              Welcome to DAIL Tech
+              {{ t('auth.welcomeTo') }}
             </div>
             <div
               class="welcome-name reveal"
@@ -250,6 +243,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useErrorStore } from '@/stores/error'
+import { useI18nStore } from '@/stores/i18n'
 import bgVideo from '@/assets/images/section4.webm'
 
 const API_BASE = 'http://43.160.245.84:8000'
@@ -286,6 +280,18 @@ async function postJson(path, body) {
 const router = useRouter()
 const userStore = useUserStore()
 const errorStore = useErrorStore()
+const i18n = useI18nStore()
+const t = (key, vars) => i18n.t(key, vars)
+
+const splitLabel = (s) => Array.from(String(s || ''))
+const toNbsp = (ch) => (ch === ' ' ? '\u00A0' : ch)
+
+const phoneNumberLabelChars = computed(() =>
+  splitLabel(t('auth.labelPhoneNumber')).map(toNbsp)
+)
+const passwordLabelChars = computed(() =>
+  splitLabel(t('auth.labelPassword')).map(toNbsp)
+)
 
 const phone = ref('')
 const password = ref('')
@@ -348,8 +354,8 @@ const welcomeDays = computed(() => {
   return Math.max(0, Math.floor(diff / DAY_MS))
 })
 
-// 登录人姓名：从 store 获取
-const displayName = computed(() => userStore.displayName)
+// 登录人姓名：从 store 获取（本地化兜底）
+const displayName = computed(() => userStore.displayName || t('common.guest'))
 
 // 从 store 获取 created_at（用于计算 days in DAIL）
 const currentCreatedAt = computed(() => userStore.createdAt)
@@ -549,12 +555,12 @@ async function runSignInTransition() {
 const handleSubmit = async () => {
   // 验证输入
   if (!phone.value.trim()) {
-    errorStore.showError('Please enter your phone number')
+    errorStore.showError(t('auth.errPhoneRequired'))
     return
   }
   
   if (!password.value) {
-    errorStore.showError('Please enter your password')
+    errorStore.showError(t('auth.errPasswordRequired'))
     return
   }
 
@@ -586,9 +592,9 @@ const handleSubmit = async () => {
     runSignInTransition()
   } catch (err) {
     // 显示错误提示
-    const errorMessage = err?.message || 'Login failed'
+    const errorMessage = err?.message || t('auth.errLoginFailed')
     if (errorMessage.includes('token') || errorMessage.includes('Incorrect')) {
-      errorStore.showError('Incorrect phone number or password')
+      errorStore.showError(t('auth.errIncorrectCredential'))
     } else {
       errorStore.showError(errorMessage)
     }

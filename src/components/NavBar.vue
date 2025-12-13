@@ -5,11 +5,10 @@
     <div class="logo-wrapper">
       <img 
         src="/src/assets/images/logo.png" 
-        alt="DAIL Tech" 
+        :alt="t('nav.logoAlt')" 
         class="logo" 
         @click="handleLogoClick"
       />
-      <!-- <div class="logo-placeholder">DAIL TECH</div> -->
     </div>
 
     <!-- 中间导航菜单（整体居中） -->
@@ -17,48 +16,70 @@
       <!-- SOLUTIONS 下拉 -->
       <div class="menu-item menu-item--dropdown">
         <button class="menu-link">
-          SOLUTIONS <span class="plus">+</span>
+          {{ t('nav.solutions') }} <span class="plus">+</span>
         </button>
         <div class="dropdown dropdown--solutions">
-          <a href="#" class="dropdown-item">By Industry</a>
-          <a href="#" class="dropdown-item">By Scenario</a>
-          <a href="#" class="dropdown-item">Custom Solutions</a>
+          <a href="#" class="dropdown-item">{{ t('nav.solutionsByIndustry') }}</a>
+          <a href="#" class="dropdown-item">{{ t('nav.solutionsByScenario') }}</a>
+          <a href="#" class="dropdown-item">{{ t('nav.solutionsCustom') }}</a>
         </div>
       </div>
 
       <!-- TECHNOLOGY 下拉 -->
       <div class="menu-item menu-item--dropdown">
         <button class="menu-link">
-          TECHNOLOGY <span class="plus">+</span>
+          {{ t('nav.technology') }} <span class="plus">+</span>
         </button>
         <div class="dropdown dropdown--technology">
-          <a href="#" class="dropdown-item">Platform</a>
-          <a href="#" class="dropdown-item">Agents</a>
-          <a href="#" class="dropdown-item">RAG Engine</a>
+          <a href="#" class="dropdown-item">{{ t('nav.technologyPlatform') }}</a>
+          <a href="#" class="dropdown-item">{{ t('nav.technologyAgents') }}</a>
+          <a href="#" class="dropdown-item">{{ t('nav.technologyRag') }}</a>
         </div>
       </div>
 
-      <!-- CASE STUDIES 普通项 -->
-      <div class="menu-item">
-        <button class="menu-link">CASE STUDIES</button>
+      <!-- LANGUAGES：hover 弹出可选项 -->
+      <div class="menu-item menu-item--dropdown menu-item--lang">
+        <button class="menu-link" type="button">
+          {{ t('nav.languages') }} <span class="plus">+</span>
+        </button>
+        <div class="dropdown dropdown--lang" role="menu" aria-label="Languages">
+          <button
+            class="dropdown-item dropdown-item--btn"
+            type="button"
+            role="menuitem"
+            :aria-current="i18n.locale === 'zh' ? 'true' : 'false'"
+            @click="selectLocale('zh')"
+          >
+            {{ t('nav.languageChinese') }}
+          </button>
+          <button
+            class="dropdown-item dropdown-item--btn"
+            type="button"
+            role="menuitem"
+            :aria-current="i18n.locale === 'en' ? 'true' : 'false'"
+            @click="selectLocale('en')"
+          >
+            {{ t('nav.languageEnglish') }}
+          </button>
+        </div>
       </div>
 
       <!-- COMPANY 下拉 -->
       <div class="menu-item menu-item--dropdown">
         <button class="menu-link">
-          COMPANY <span class="plus">+</span>
+          {{ t('nav.company') }} <span class="plus">+</span>
         </button>
         <div class="dropdown dropdown--company">
-          <a href="#" class="dropdown-item">About</a>
-          <a href="#" class="dropdown-item">Team</a>
-          <a href="#" class="dropdown-item">Careers</a>
-          <a href="#" class="dropdown-item">News</a>
+          <a href="#" class="dropdown-item">{{ t('nav.companyAbout') }}</a>
+          <a href="#" class="dropdown-item">{{ t('nav.companyTeam') }}</a>
+          <a href="#" class="dropdown-item">{{ t('nav.companyCareers') }}</a>
+          <a href="#" class="dropdown-item">{{ t('nav.companyNews') }}</a>
         </div>
       </div>
 
       <!-- DOCS 普通项 -->
       <div class="menu-item">
-        <button class="menu-link">DOCS</button>
+        <button class="menu-link">{{ t('nav.docs') }}</button>
       </div>
     </nav>
 
@@ -66,7 +87,7 @@
     <div class="nav-actions">
       <!-- Contact Us 按钮 -->
       <button class="btn-12">
-        <span>Contact Us</span>
+        <span>{{ t('nav.contactUs') }}</span>
       </button>
 
       <!-- Search 输入框 -->
@@ -74,23 +95,25 @@
         <input required type="text" class="input" />
         <span class="bar"></span>
         <label class="label">
-          <span class="label-char" style="--index: 0">S</span>
-          <span class="label-char" style="--index: 1">e</span>
-          <span class="label-char" style="--index: 2">a</span>
-          <span class="label-char" style="--index: 3">r</span>
-          <span class="label-char" style="--index: 4">c</span>
-          <span class="label-char" style="--index: 5">h</span>
+          <span
+            v-for="(ch, idx) in searchLabelChars"
+            :key="`${idx}-${ch}`"
+            class="label-char"
+            :style="{ '--index': idx }"
+          >
+            {{ ch }}
+          </span>
         </label>
       </div>
 
       <!-- Login/User 图标 -->
       <button
         class="login-icon"
-        :aria-label="isLoggedIn ? 'User Profile' : 'Login'"
+        :aria-label="isLoggedIn ? t('nav.userProfile') : t('nav.login')"
         type="button"
         @click="handleUserClick"
       >
-        <img v-if="!isLoggedIn" src="/src/assets/images/login.png" alt="Login" />
+        <img v-if="!isLoggedIn" src="/src/assets/images/login.png" :alt="t('nav.login')" />
         <div v-else class="user-avatar">
           {{ userInitial }}
         </div>
@@ -100,15 +123,22 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useI18nStore } from '@/stores/i18n'
 
 const router = useRouter()
 const userStore = useUserStore()
+const i18n = useI18nStore()
 const emit = defineEmits(['navigate-home'])
+const showLoaderFor = inject('showLoaderFor', null)
 
 const isScrolled = ref(false)
+
+const t = (key, vars) => i18n.t(key, vars)
+
+const searchLabelChars = computed(() => String(t('nav.search') || '').split(''))
 
 // 检查登录状态
 const isLoggedIn = computed(() => userStore.isLoggedIn)
@@ -135,6 +165,16 @@ const handleScroll = () => {
 
 const handleLogoClick = () => {
   emit('navigate-home')
+}
+
+const selectLocale = (nextLocale) => {
+  const run = () => i18n.setLocale(nextLocale)
+  if (typeof showLoaderFor === 'function') {
+    showLoaderFor(1000, run)
+    return
+  }
+  // fallback (shouldn't happen if App.vue provides it)
+  setTimeout(run, 1000)
 }
 
 onMounted(() => {
@@ -287,6 +327,25 @@ onBeforeUnmount(() => {
 
 .dropdown--company {
   max-width: 280px;
+}
+
+.dropdown--lang {
+  min-width: 180px;
+  max-width: 220px;
+}
+
+.dropdown-item--btn {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.dropdown-item--btn[aria-current='true'] {
+  font-weight: 700;
+  color: #9333ea;
 }
 
 .dropdown-item {

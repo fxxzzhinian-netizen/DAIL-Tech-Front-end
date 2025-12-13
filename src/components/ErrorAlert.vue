@@ -7,7 +7,7 @@
     >
       <button
         type="button"
-        aria-label="close-error"
+        :aria-label="$t('error.close')"
         class="error-alert__close"
         @click="close"
       >

@@ -2,8 +2,8 @@
   <section class="register-page">
     <div class="panel left-panel">
       <div class="form-shell">
-        <h2 class="title slide-in-right" :class="{ 'animate': isMounted }">CREATE ACCOUNT</h2>
-        <p class="subtitle slide-in-right" :class="{ 'animate': isMounted }">Join the AI-native workspace today.</p>
+        <h2 class="title slide-in-right" :class="{ 'animate': isMounted }">{{ t('auth.createAccount') }}</h2>
+        <p class="subtitle slide-in-right" :class="{ 'animate': isMounted }">{{ t('auth.registerSubtitle') }}</p>
 
         <form class="form" @submit.prevent="handleRegister">
           
@@ -15,14 +15,13 @@
               autocomplete="off"
             />
             <label>
-              <span style="transition-delay:0ms">U</span>
-              <span style="transition-delay:50ms">s</span>
-              <span style="transition-delay:100ms">e</span>
-              <span style="transition-delay:150ms">r</span>
-              <span style="transition-delay:200ms">n</span>
-              <span style="transition-delay:250ms">a</span>
-              <span style="transition-delay:300ms">m</span>
-              <span style="transition-delay:350ms">e</span>
+              <span
+                v-for="(ch, idx) in usernameLabelChars"
+                :key="`username-${idx}-${ch}`"
+                :style="{ 'transition-delay': `${idx * 50}ms` }"
+              >
+                {{ ch }}
+              </span>
             </label>
           </div>
 
@@ -35,11 +34,13 @@
                 autocomplete="off"
               />
               <label>
-                <span style="transition-delay:0ms">P</span>
-                <span style="transition-delay:50ms">h</span>
-                <span style="transition-delay:100ms">o</span>
-                <span style="transition-delay:150ms">n</span>
-                <span style="transition-delay:200ms">e</span>
+                <span
+                  v-for="(ch, idx) in phoneLabelChars"
+                  :key="`phone-${idx}-${ch}`"
+                  :style="{ 'transition-delay': `${idx * 50}ms` }"
+                >
+                  {{ ch }}
+                </span>
               </label>
             </div>
             <button 
@@ -53,7 +54,7 @@
               :disabled="isCounting || sendLoading || sendAnimating"
               @click="sendCode"
             >
-              {{ isCounting ? `${count}s` : (showSendingUI ? 'Sending...' : 'Send Code') }}
+              {{ isCounting ? `${count}s` : (showSendingUI ? t('auth.sending') : t('auth.sendCode')) }}
             </button>
           </div>
 
@@ -65,10 +66,13 @@
               autocomplete="off"
             />
             <label>
-              <span style="transition-delay:0ms">C</span>
-              <span style="transition-delay:50ms">o</span>
-              <span style="transition-delay:100ms">d</span>
-              <span style="transition-delay:150ms">e</span>
+              <span
+                v-for="(ch, idx) in codeLabelChars"
+                :key="`code-${idx}-${ch}`"
+                :style="{ 'transition-delay': `${idx * 50}ms` }"
+              >
+                {{ ch }}
+              </span>
             </label>
           </div>
 
@@ -80,14 +84,13 @@
               autocomplete="off"
             />
             <label>
-              <span style="transition-delay:0ms">P</span>
-              <span style="transition-delay:50ms">a</span>
-              <span style="transition-delay:100ms">s</span>
-              <span style="transition-delay:150ms">s</span>
-              <span style="transition-delay:200ms">w</span>
-              <span style="transition-delay:250ms">o</span>
-              <span style="transition-delay:300ms">r</span>
-              <span style="transition-delay:350ms">d</span>
+              <span
+                v-for="(ch, idx) in passwordLabelChars"
+                :key="`password-${idx}-${ch}`"
+                :style="{ 'transition-delay': `${idx * 50}ms` }"
+              >
+                {{ ch }}
+              </span>
             </label>
           </div>
 
@@ -99,23 +102,24 @@
               autocomplete="off"
             />
             <label>
-              <span style="transition-delay:0ms">C</span>
-              <span style="transition-delay:50ms">o</span>
-              <span style="transition-delay:100ms">n</span>
-              <span style="transition-delay:150ms">f</span>
-              <span style="transition-delay:200ms">i</span>
-              <span style="transition-delay:250ms">r</span>
-              <span style="transition-delay:300ms">m</span>
+              <span
+                v-for="(ch, idx) in confirmLabelChars"
+                :key="`confirm-${idx}-${ch}`"
+                :style="{ 'transition-delay': `${idx * 50}ms` }"
+              >
+                {{ ch }}
+              </span>
             </label>
           </div>
 
           <button type="submit" class="primary-btn blur-fade" :class="{ 'animate': isMounted }" :disabled="registerLoading">
-            {{ registerLoading ? 'Signing Up...' : 'Sign Up' }}
+            {{ registerLoading ? t('auth.signingUp') : t('auth.signUp') }}
           </button>
         </form>
 
         <div class="footer slide-in-left" :class="{ 'animate': isMounted }">
-          Already have an account? <router-link to="/login" class="footer-link">LOGIN HERE</router-link>
+          {{ t('auth.alreadyHaveAccount') }}
+          <router-link to="/login" class="footer-link">{{ t('auth.loginHere') }}</router-link>
         </div>
       </div>
     </div>
@@ -136,16 +140,6 @@
         <div class="tagline">
           </div>
 
-        <!-- <div class="founded-days">
-          <span class="founded-inline founded-inline--brand">DAIL Tech</span>
-          <span class="founded-inline founded-inline--text">has been founded for</span>
-          <span class="founded-inline founded-inline--days">
-            <span class="days-number">{{ foundedDays }}</span>
-            <span class="days-label">days</span>
-            <span class="hours-number">{{ foundedHours }}</span>
-            <span class="hours-label">Hours</span>
-          </span>
-        </div> -->
       </div>
     </div>
   </section>
@@ -155,8 +149,20 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import bgVideo from '@/assets/images/section4.webm'
+import { useI18nStore } from '@/stores/i18n'
 
 const router = useRouter()
+const i18n = useI18nStore()
+const t = (key, vars) => i18n.t(key, vars)
+
+const splitLabel = (s) => Array.from(String(s || ''))
+const toNbsp = (ch) => (ch === ' ' ? '\u00A0' : ch)
+
+const usernameLabelChars = computed(() => splitLabel(t('auth.labelUsername')).map(toNbsp))
+const phoneLabelChars = computed(() => splitLabel(t('auth.labelPhone')).map(toNbsp))
+const codeLabelChars = computed(() => splitLabel(t('auth.labelCode')).map(toNbsp))
+const passwordLabelChars = computed(() => splitLabel(t('auth.labelPassword')).map(toNbsp))
+const confirmLabelChars = computed(() => splitLabel(t('auth.labelConfirm')).map(toNbsp))
 
 const API_BASE = 'http://43.160.245.84:8000'
 
@@ -231,7 +237,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const sendCode = async () => {
   const p = phone.value.trim()
   if (!p) {
-    alert('Please enter phone number first')
+    alert(t('auth.errEnterPhoneFirst'))
     return
   }
 
@@ -259,7 +265,7 @@ const sendCode = async () => {
     showSendingUI.value = false
     startCountdown(seconds)
   } catch (err) {
-    alert(err?.message || 'Failed to send code')
+    alert(err?.message || t('auth.errSendCodeFailed'))
     showSendingUI.value = false
   } finally {
     sendAnimating.value = false
@@ -282,7 +288,7 @@ const handleRegister = async () => {
   if (registerLoading.value) return
 
   if (password.value !== confirmPassword.value) {
-    alert('Passwords do not match!')
+    alert(t('auth.errPasswordMismatch'))
     return
   }
 
@@ -301,7 +307,7 @@ const handleRegister = async () => {
     // 注册成功：跳回登录页（你也可以改成直接进入首页）
     router.push('/login')
   } catch (err) {
-    alert(err?.message || 'Register failed')
+    alert(err?.message || t('auth.errRegisterFailed'))
   } finally {
     registerLoading.value = false
   }

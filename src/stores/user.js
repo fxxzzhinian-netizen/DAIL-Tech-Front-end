@@ -16,7 +16,8 @@ export const useUserStore = defineStore('user', () => {
 
   // 计算属性
   const isLoggedIn = computed(() => !!accessToken.value && !isAccessTokenExpired.value)
-  const displayName = computed(() => username.value || 'Guest')
+  // Keep i18n out of store; let UI decide the localized fallback text
+  const displayName = computed(() => username.value || '')
   
   // 检查 token 是否过期
   const isAccessTokenExpired = computed(() => {

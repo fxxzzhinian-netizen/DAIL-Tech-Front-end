@@ -11,7 +11,7 @@
         <!-- Sidebar -->
         <aside class="sidebar">
   
-          <nav class="nav" aria-label="User navigation">
+          <nav class="nav" :aria-label="t('user.navAria')">
             <button
               class="nav-item float-in"
               :style="{ '--d': '80ms' }"
@@ -19,8 +19,8 @@
               @click="activeTab = 'profile'"
               type="button"
             >
-              <span class="nav-text">Profile</span>
-              <span class="nav-desc">Basic info</span>
+              <span class="nav-text">{{ t('user.navProfile') }}</span>
+              <span class="nav-desc">{{ t('user.navProfileDesc') }}</span>
             </button>
   
             <button
@@ -30,8 +30,8 @@
               @click="activeTab = 'dominate'"
               type="button"
             >
-              <span class="nav-text">Dominate</span>
-              <span class="nav-desc">Permissions (reserved)</span>
+              <span class="nav-text">{{ t('user.navDominate') }}</span>
+              <span class="nav-desc">{{ t('user.navDominateDesc') }}</span>
             </button>
           </nav>
   
@@ -48,7 +48,7 @@
                   </div>
                   <div class="stepper-line"></div>
                   <div class="stepper-content">
-                    <div class="stepper-title">Account</div>
+                    <div class="stepper-title">{{ t('user.stepAccount') }}</div>
                     <div class="stepper-sub">{{ displayName }}</div>
                   </div>
                 </div>
@@ -58,8 +58,8 @@
                   <div class="stepper-circle" aria-hidden="true">2</div>
                   <div class="stepper-line"></div>
                   <div class="stepper-content">
-                    <div class="stepper-title">Progress</div>
-                    <div class="stepper-sub">{{ daysInDAIL }} days in DAIL</div>
+                    <div class="stepper-title">{{ t('user.stepProgress') }}</div>
+                    <div class="stepper-sub">{{ t('user.progressDaysInDail', { days: daysInDAIL }) }}</div>
                   </div>
                 </div>
 
@@ -67,8 +67,8 @@
                 <div class="stepper-step is-pending float-in" :style="{ '--d': '360ms' }" :class="{ animate: isMounted }">
                   <div class="stepper-circle" aria-hidden="true">3</div>
                   <div class="stepper-content">
-                    <div class="stepper-title">Dominate</div>
-                    <div class="stepper-sub">Reserved</div>
+                    <div class="stepper-title">{{ t('user.stepDominate') }}</div>
+                    <div class="stepper-sub">{{ t('user.reserved') }}</div>
                   </div>
               </div>
               </div>
@@ -81,7 +81,7 @@
               type="button"
               @click="handleLogout"
             >
-              Logout
+              {{ t('user.logout') }}
             </button>
           </div>
         </aside>
@@ -91,14 +91,14 @@
           <!-- 顶部标题 -->
           <header class="content-header">
             <h2 class="content-title float-in" :style="{ '--d': '80ms' }" :class="{ animate: contentAnimate }">
-              {{ activeTab === 'profile' ? 'PROFILE' : 'DOMINATE' }}
+              {{ activeTab === 'profile' ? t('user.headerProfile') : t('user.headerDominate') }}
             </h2>
             <p class="content-subtitle float-in" :style="{ '--d': '140ms' }" :class="{ animate: contentAnimate }">
               <template v-if="activeTab === 'profile'">
-                Manage your basic account information.
+                {{ t('user.subtitleProfile') }}
               </template>
               <template v-else>
-                Reserved for roles, permissions, and access policies.
+                {{ t('user.subtitleDominate') }}
               </template>
             </p>
           </header>
@@ -116,11 +116,11 @@
                 </div>
 
                 <div class="info-body">
-                  <div class="info-title">Profile photo</div>
-                  <div class="info-sub">Add a profile photo to personalize your account.</div>
+                  <div class="info-title">{{ t('user.profilePhoto') }}</div>
+                  <div class="info-sub">{{ t('user.profilePhotoDesc') }}</div>
                 </div>
   
-                <div class="avatar" aria-label="Avatar">{{ avatarLetter }}</div>
+                <div class="avatar" :aria-label="t('user.avatarAria')">{{ avatarLetter }}</div>
                 </div>
   
               <!-- Name -->
@@ -136,7 +136,7 @@
                 </div>
   
                 <div class="info-body">
-                  <div class="info-title">Name</div>
+                  <div class="info-title">{{ t('user.name') }}</div>
                   <div class="info-value">{{ profileName }}</div>
                 </div>
                   </div>
@@ -154,7 +154,7 @@
                   </div>
 
                 <div class="info-body">
-                  <div class="info-title">Birthday</div>
+                  <div class="info-title">{{ t('user.birthday') }}</div>
                   <div class="info-value">{{ birthdayText }}</div>
                   </div>
                 </div>
@@ -170,7 +170,7 @@
               </div>
   
                 <div class="info-body">
-                  <div class="info-title">Email</div>
+                  <div class="info-title">{{ t('user.email') }}</div>
                   <div class="info-value">{{ emailText }}</div>
                 </div>
               </div>
@@ -181,13 +181,12 @@
           <section v-else class="panel">
             <div class="panel-inner">
               <div class="placeholder">
-                <div class="placeholder-title float-in" :style="{ '--d': '200ms' }" :class="{ animate: contentAnimate }">Coming soon</div>
+                <div class="placeholder-title float-in" :style="{ '--d': '200ms' }" :class="{ animate: contentAnimate }">{{ t('user.dominateComingSoonTitle') }}</div>
                 <div class="placeholder-text float-in" :style="{ '--d': '260ms' }" :class="{ animate: contentAnimate }">
-                  This section is reserved for permission management:
-                  roles, policies, access scopes, audit logs, and admin tools.
+                  {{ t('user.dominateComingSoonText') }}
                 </div>
                 <div class="placeholder-hint float-in" :style="{ '--d': '320ms' }" :class="{ animate: contentAnimate }">
-                  You can keep the tab now and wire it to your RBAC / ABAC later.
+                  {{ t('user.dominateComingSoonHint') }}
                 </div>
               </div>
             </div>
@@ -201,10 +200,13 @@
   import { ref, computed, onMounted, watch, nextTick } from 'vue'
   import { useRouter } from 'vue-router'
   import { useUserStore } from '@/stores/user'
+  import { useI18nStore } from '@/stores/i18n'
   import bgVideo from '@/assets/images/section4.webm'
   
   const router = useRouter()
   const userStore = useUserStore()
+  const i18n = useI18nStore()
+  const t = (key, vars) => i18n.t(key, vars)
   
   const isMounted = ref(false)
   const contentAnimate = ref(false)
@@ -218,7 +220,9 @@
   
   const DAY_MS = 1000 * 60 * 60 * 24
   
-  const displayName = computed(() => userStore.displayName || userStore.username || 'Guest')
+  const displayName = computed(
+    () => userStore.displayName || userStore.username || t('common.guest')
+  )
   const username = computed(() => userStore.username || userStore.phone || '—')
   const createdAtRaw = computed(() => userStore.createdAt || userStore.created_at || '')
   
@@ -249,7 +253,7 @@
   const birthdayRaw = computed(() =>
     userStore.birthday || userStore.birthdate || userStore.birth_day || ''
   )
-  const birthdayText = computed(() => birthdayRaw.value || 'Not set')
+  const birthdayText = computed(() => birthdayRaw.value || t('common.notSet'))
   
   /** Profile 表单（先做本地 + store patch，后续你接 API 再替换） */
   const profileName = ref(displayName.value)
@@ -258,7 +262,7 @@
 
   const emailText = computed(() => {
     const v = (profileEmail.value || userStore.email || '').trim()
-    return v || 'Not set'
+    return v || t('common.notSet')
   })
   
   function handleResetProfile() {
@@ -270,11 +274,11 @@
   function handleSaveProfile() {
     // Pinia：允许直接 patch（即便后续你 store 扩展字段也不冲突）
     userStore.$patch({
-      displayName: profileName.value?.trim() || 'Guest',
+      displayName: profileName.value?.trim() || t('common.guest'),
       phone: profilePhone.value?.trim() || '',
       email: profileEmail.value?.trim() || '',
     })
-    alert('Saved')
+    alert(t('common.saved'))
   }
   
   function handleLogout() {
@@ -462,6 +466,7 @@
   }
   
   .content-subtitle {
+    margin-top: 10px;
     margin-left: 20px;
     color: #6b7280;
     font-size: 14px;

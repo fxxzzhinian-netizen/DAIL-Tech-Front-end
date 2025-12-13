@@ -2,10 +2,10 @@
     <section class="end-page">
       <!-- 顶部订阅 -->
       <div class="subscribe-row">
-        <h2 class="subscribe-title">Stay up to date with DAIL Tech</h2>
+        <h2 class="subscribe-title">{{ $t('footer.subscribeTitle') }}</h2>
   
         <div class="subscribe-input">
-          <input type="email" placeholder="Email*" />
+          <input type="email" :placeholder="$t('footer.emailPlaceholder')" />
           <button class="subscribe-btn">➜</button>
         </div>
       </div>
@@ -21,7 +21,7 @@
               <div class="background"></div>
   
               <div class="logo">
-                <img :src="dailLogo" alt="DAIL logo" class="logo-img" />
+                <img :src="dailLogo" :alt="$t('footer.dailLogoAlt')" class="logo-img" />
               </div>
   
               <a href="#">
@@ -67,44 +67,44 @@
   
         <!-- Solutions -->
         <div class="col">
-          <p class="col-title">SOLUTIONS</p>
+          <p class="col-title">{{ $t('footer.solutionsTitle') }}</p>
           <ul>
-            <li>Industrial AI Copilots</li>
-            <li>RAG Knowledge Engine</li>
-            <li>Edge–Cloud Coordination</li>
-            <li>Case studies</li>
+            <li>{{ $t('footer.solutions1') }}</li>
+            <li>{{ $t('footer.solutions2') }}</li>
+            <li>{{ $t('footer.solutions3') }}</li>
+            <li>{{ $t('footer.solutions4') }}</li>
           </ul>
         </div>
   
         <!-- Technology -->
         <div class="col">
-          <p class="col-title">TECHNOLOGY</p>
+          <p class="col-title">{{ $t('footer.technologyTitle') }}</p>
           <ul>
-            <li>Multi-Agent Framework</li>
-            <li>R&D</li>
-            <li>Try DAIL Agent →</li>
+            <li>{{ $t('footer.technology1') }}</li>
+            <li>{{ $t('footer.technology2') }}</li>
+            <li>{{ $t('footer.technology3') }}</li>
           </ul>
         </div>
   
         <!-- Company -->
         <div class="col">
-          <p class="col-title">COMPANY</p>
+          <p class="col-title">{{ $t('footer.companyTitle') }}</p>
           <ul>
-            <li>About</li>
-            <li>News</li>
-            <li>Contact</li>
-            <li>Careers →</li>
+            <li>{{ $t('footer.company1') }}</li>
+            <li>{{ $t('footer.company2') }}</li>
+            <li>{{ $t('footer.company3') }}</li>
+            <li>{{ $t('footer.company4') }}</li>
           </ul>
         </div>
   
         <!-- Legal -->
         <div class="col">
-          <p class="col-title">LEGAL</p>
+          <p class="col-title">{{ $t('footer.legalTitle') }}</p>
           <ul>
-            <li>LFM License</li>
-            <li>Privacy Policy</li>
-            <li>Privacy Choices</li>
-            <li>Terms & Conditions</li>
+            <li>{{ $t('footer.legal1') }}</li>
+            <li>{{ $t('footer.legal2') }}</li>
+            <li>{{ $t('footer.legal3') }}</li>
+            <li>{{ $t('footer.legal4') }}</li>
           </ul>
         </div>
       </div>
@@ -115,27 +115,25 @@
       <div class="social-row">
         <div class="social-icons">
           <div class="icon-round">
-            <img src="@/assets/images/end-1.png" alt="Social Icon 1" />
+            <img src="@/assets/images/end-1.png" :alt="$t('footer.socialAlt', { n: 1 })" />
           </div>
           <div class="icon-round">
-            <img src="@/assets/images/end-2.png" alt="Social Icon 2" />
+            <img src="@/assets/images/end-2.png" :alt="$t('footer.socialAlt', { n: 2 })" />
           </div>
           <div class="icon-round">
-            <img src="@/assets/images/end-3.png" alt="Social Icon 3" />
+            <img src="@/assets/images/end-3.png" :alt="$t('footer.socialAlt', { n: 3 })" />
           </div>
           <div class="icon-round">
-            <img src="@/assets/images/end-4.png" alt="Social Icon 4" />
+            <img src="@/assets/images/end-4.png" :alt="$t('footer.socialAlt', { n: 4 })" />
           </div>
           <div class="icon-round">
-            <img src="@/assets/images/end-5.png" alt="Social Icon 5" />
+            <img src="@/assets/images/end-5.png" :alt="$t('footer.socialAlt', { n: 5 })" />
           </div>
         </div>
   
-        <p class="copyright">
-          © 2025 DAIL Tech. All rights reserved.
-        </p>
+        <p class="copyright">{{ $t('footer.rights') }}</p>
   
-        <p class="address">Beijing · Shanghai · Shenzhen</p>
+        <p class="address">{{ $t('footer.address') }}</p>
       </div>
     </section>
   </template>

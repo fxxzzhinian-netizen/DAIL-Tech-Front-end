@@ -17,18 +17,18 @@
     <!-- 前景内容 -->
     <div class="cta-container" ref="ctaRef">
       <div class="cta-content">
-        <div class="cta-preheadline fade-in-slide" :class="{ 'animate': isVisible }">MAKING AI + INDUSTRY REAL</div>
+        <div class="cta-preheadline fade-in-slide" :class="{ 'animate': isVisible }">{{ $t('cta.preheadline') }}</div>
 
         <h2 class="cta-headline fade-in-slide" :class="{ 'animate': isVisible }">
-          Power real industries, workflows,
+          {{ $t('cta.headlineLine1') }}
           <br />
-          and teams with DAIL Tech.
+          {{ $t('cta.headlineLine2') }}
         </h2>
 
         <div class="cta-buttons fade-in-slide" :class="{ 'animate': isVisible }">
           <button class="btn-try">
             <span class="text-container">
-              <span class="text">Talk to DAIL Tech</span>
+              <span class="text">{{ $t('cta.talk') }}</span>
             </span>
           </button>
           <button class="btn-talk animated-button">
@@ -37,7 +37,7 @@
                 d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
               ></path>
             </svg>
-            <span class="text">Explore use cases</span>
+            <span class="text">{{ $t('cta.explore') }}</span>
             <span class="circle"></span>
             <svg xmlns="http://www.w3.org/2000/svg" class="arr-1" viewBox="0 0 24 24">
               <path
