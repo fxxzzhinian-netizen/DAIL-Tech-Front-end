@@ -83,30 +83,50 @@
         </label>
       </div>
 
-      <!-- Login 图标 -->
+      <!-- Login/User 图标 -->
       <button
         class="login-icon"
-        aria-label="Login"
+        :aria-label="isLoggedIn ? 'User Profile' : 'Login'"
         type="button"
-        @click="handleLoginClick"
+        @click="handleUserClick"
       >
-        <img src="/src/assets/images/login.png" alt="Login" />
+        <img v-if="!isLoggedIn" src="/src/assets/images/login.png" alt="Login" />
+        <div v-else class="user-avatar">
+          {{ userInitial }}
+        </div>
       </button>
     </div>
   </header>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 const emit = defineEmits(['navigate-home'])
 
 const isScrolled = ref(false)
 
-const handleLoginClick = () => {
-  router.push('/login')
+// 检查登录状态
+const isLoggedIn = computed(() => userStore.isLoggedIn)
+
+// 用户头像首字母
+const userInitial = computed(() => {
+  const name = userStore.displayName || userStore.username || 'U'
+  return name.charAt(0).toUpperCase()
+})
+
+const handleUserClick = () => {
+  if (isLoggedIn.value) {
+    // 已登录，跳转到用户页面
+    router.push('/user')
+  } else {
+    // 未登录，跳转到登录页面
+    router.push('/login')
+  }
 }
 
 const handleScroll = () => {
@@ -350,6 +370,22 @@ onBeforeUnmount(() => {
 
 .login-icon:hover img {
   filter: invert(1);
+}
+
+.user-avatar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #000;
+  transition: color 0.2s ease;
+}
+
+.login-icon:hover .user-avatar {
+  color: #fff;
 }
 
 /* ============ Contact Us 按钮样式（btn-12） ============ */

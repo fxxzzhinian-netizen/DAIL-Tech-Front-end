@@ -4,6 +4,9 @@
     <!-- 加载页面 -->
     <LoaderOverlay :show="showLoader" />
 
+    <!-- 全局错误提示 -->
+    <ErrorAlert />
+
     <!-- 顶部极简导航 -->
     <NavBar @navigate-home="handleNavigateHome" />
 
@@ -17,12 +20,18 @@
 <script setup>
 import { ref, onMounted, provide } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 import NavBar from './components/NavBar.vue'
 import LoaderOverlay from './components/LoaderOverlay.vue'
+import ErrorAlert from './components/ErrorAlert.vue'
 
 const router = useRouter()
+const userStore = useUserStore()
 const showLoader = ref(true)
 const loaderFinished = ref(false)
+
+// 初始化用户状态（从存储中恢复）
+userStore.init()
 
 // 提供给子组件，通知过场动画已结束
 provide('loaderFinished', loaderFinished)

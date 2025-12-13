@@ -89,12 +89,11 @@
         <h2 class="title fade-in-up" :class="{ 'animate': isMounted }">SIGN IN TO COUNTINUE</h2>
         <p class="subtitle fade-in-up" :class="{ 'animate': isMounted }">Modern. Secure. AI-native workspace.</p>
 
-         <form class="form" @submit.prevent="handleSubmit">
+         <form class="form" novalidate @submit.prevent="handleSubmit">
            <div class="form-control fade-in-up" :class="{ 'animate': isMounted, filled: !!phone }">
              <input
                v-model="phone"
                type="tel"
-               required
                autocomplete="tel"
              />
              <label>
@@ -117,7 +116,6 @@
              <input
                v-model="password"
                type="password"
-               required
                autocomplete="off"
              />
              <label>
@@ -250,6 +248,8 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { useErrorStore } from '@/stores/error'
 import bgVideo from '@/assets/images/section4.webm'
 
 const API_BASE = 'http://43.160.245.84:8000'
@@ -284,6 +284,8 @@ async function postJson(path, body) {
 }
 
 const router = useRouter()
+const userStore = useUserStore()
+const errorStore = useErrorStore()
 
 const phone = ref('')
 const password = ref('')
@@ -346,12 +348,11 @@ const welcomeDays = computed(() => {
   return Math.max(0, Math.floor(diff / DAY_MS))
 })
 
-// 登录态
-const currentUsername = ref('')
-const currentCreatedAt = ref('') // API 返回的 created_at 字符串
+// 登录人姓名：从 store 获取
+const displayName = computed(() => userStore.displayName)
 
-// 登录人姓名：缺省为 Guest；登录成功后自动变成 username
-const displayName = computed(() => currentUsername.value || 'Guest')
+// 从 store 获取 created_at（用于计算 days in DAIL）
+const currentCreatedAt = computed(() => userStore.createdAt)
 
 function animateNumber(targetRef, to, duration = 1200) {
   const from = 0
@@ -546,6 +547,17 @@ async function runSignInTransition() {
 }
 
 const handleSubmit = async () => {
+  // 验证输入
+  if (!phone.value.trim()) {
+    errorStore.showError('Please enter your phone number')
+    return
+  }
+  
+  if (!password.value) {
+    errorStore.showError('Please enter your password')
+    return
+  }
+
   try {
     const payload = {
       phone: phone.value.trim(),
@@ -554,21 +566,32 @@ const handleSubmit = async () => {
 
     const resp = await postJson('/api/auth/login', payload)
 
-    // 1) 用返回值替换 Guest
-    currentUsername.value = resp?.username || ''
-    currentCreatedAt.value = resp?.created_at || ''
+    // 使用 store 保存 token 和用户信息
+    userStore.login(
+      {
+        access_token: resp?.access_token,
+        refresh_token: resp?.refresh_token,
+        token_type: resp?.token_type,
+        access_expires_in: resp?.access_expires_in,
+        refresh_expires_in: resp?.refresh_expires_in
+      },
+      {
+        username: resp?.username || '',
+        created_at: resp?.created_at || ''
+      },
+      remember.value
+    )
 
-    // 2) 存 token（按 Remember me 存 localStorage / sessionStorage）
-    const storage = remember.value ? localStorage : sessionStorage
-    if (resp?.access_token) storage.setItem('access_token', resp.access_token)
-    if (resp?.refresh_token) storage.setItem('refresh_token', resp.refresh_token)
-    storage.setItem('username', currentUsername.value)
-    storage.setItem('created_at', currentCreatedAt.value)
-
-    // 3) 登录成功后跑你现有的转场
+    // 登录成功后跑你现有的转场
     runSignInTransition()
   } catch (err) {
-    alert(err?.message || 'Login failed')
+    // 显示错误提示
+    const errorMessage = err?.message || 'Login failed'
+    if (errorMessage.includes('token') || errorMessage.includes('Incorrect')) {
+      errorStore.showError('Incorrect phone number or password')
+    } else {
+      errorStore.showError(errorMessage)
+    }
   }
 }
 
