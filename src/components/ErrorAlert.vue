@@ -87,7 +87,7 @@ const close = () => {
 
   border: 1px solid #f85149;
   color: #b22b2b;
-  background: linear-gradient(#f851491a, #f851491a);
+  background: #fee2e2; /* opaque */
 }
 
 .error-alert__close {
@@ -100,14 +100,14 @@ const close = () => {
   border: 1px solid #f85149;
   background: transparent;
   cursor: pointer;
-  opacity: 0.4;
+  opacity: 1;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .error-alert__close:hover {
-  opacity: 1;
+  background: rgba(248, 81, 73, 0.14);
 }
 
 .error-alert__close svg {

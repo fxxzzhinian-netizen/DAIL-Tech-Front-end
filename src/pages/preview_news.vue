@@ -162,6 +162,7 @@ import { useRouter } from 'vue-router'
 import { useI18nStore } from '@/stores/i18n'
 import { useErrorStore } from '@/stores/error'
 import { useSuccessStore } from '@/stores/success'
+import { useWarningStore } from '@/stores/warning'
 import { useUserStore } from '@/stores/user'
 import { createNews, formatDateLong } from '@/services/newsService'
 
@@ -169,6 +170,7 @@ const router = useRouter()
 const i18n = useI18nStore()
 const errorStore = useErrorStore()
 const successStore = useSuccessStore()
+const warningStore = useWarningStore()
 const userStore = useUserStore()
 const t = (key, vars) => i18n.t(key, vars)
 
@@ -352,11 +354,11 @@ async function publish() {
 
   // Basic validation (backend still validates)
   if (!payload.slug || !payload.title || !payload.category || !payload.publishedAt) {
-    errorStore.showError(i18n.locale === 'zh' ? '请填写 slug / 标题 / 分类 / 日期' : 'Please fill slug / title / category / date')
+    warningStore.showWarning(i18n.locale === 'zh' ? '请填写 slug / 标题 / 分类 / 日期' : 'Please fill slug / title / category / date')
     return
   }
   if (!Array.isArray(payload.content) || payload.content.length === 0) {
-    errorStore.showError(i18n.locale === 'zh' ? '请填写正文' : 'Please fill content')
+    warningStore.showWarning(i18n.locale === 'zh' ? '请填写正文' : 'Please fill content')
     return
   }
 

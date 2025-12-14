@@ -83,7 +83,7 @@ const close = () => {
 
   border: 1px solid #22c55e;
   color: #15803d;
-  background: linear-gradient(rgba(34, 197, 94, 0.10), rgba(34, 197, 94, 0.10));
+  background: #dcfce7; /* opaque */
 }
 
 .success-alert__close {
@@ -96,14 +96,14 @@ const close = () => {
   border: 1px solid #22c55e;
   background: transparent;
   cursor: pointer;
-  opacity: 0.4;
+  opacity: 1;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .success-alert__close:hover {
-  opacity: 1;
+  background: rgba(34, 197, 94, 0.14);
 }
 
 .success-alert__close svg {

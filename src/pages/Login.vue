@@ -243,6 +243,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useErrorStore } from '@/stores/error'
+import { useWarningStore } from '@/stores/warning'
 import { useI18nStore } from '@/stores/i18n'
 import bgVideo from '@/assets/images/section4.webm'
 
@@ -281,6 +282,7 @@ async function postJson(path, body) {
 const router = useRouter()
 const userStore = useUserStore()
 const errorStore = useErrorStore()
+const warningStore = useWarningStore()
 const i18n = useI18nStore()
 const t = (key, vars) => i18n.t(key, vars)
 
@@ -556,12 +558,12 @@ async function runSignInTransition() {
 const handleSubmit = async () => {
   // 验证输入
   if (!phone.value.trim()) {
-    errorStore.showError(t('auth.errPhoneRequired'))
+    warningStore.showWarning(t('auth.errPhoneRequired'))
     return
   }
   
   if (!password.value) {
-    errorStore.showError(t('auth.errPasswordRequired'))
+    warningStore.showWarning(t('auth.errPasswordRequired'))
     return
   }
 

@@ -1,13 +1,50 @@
 <template>
   <section class="detail-page">
     <div class="detail-container">
+      <button
+        class="back-btn"
+        :class="{ 'is-open': isBackOpen, 'is-pressed': isBackPressed, 'is-dragging': isBackDragging }"
+        type="button"
+        :aria-label="backAriaLabel"
+        @click="onBack"
+        @pointerenter="openBack()"
+        @pointerleave="onBackPointerLeave"
+        @focusin="openBack()"
+        @focusout="closeBackNow()"
+        @pointerdown="onBackPointerDown"
+        @pointermove="onBackPointerMove"
+        @pointerup="onBackPointerUp"
+        @pointercancel="onBackPointerCancel"
+        :style="backBtnStyle"
+      >
+        <span v-show="!isBackOpen" class="back-btn__chev back-btn__chev--right" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path
+              d="M729.6 448H128v85.333333h601.6L597.333333 665.6l59.733334 59.733333 234.666666-234.666666L661.333333 256l-59.733333 59.733333 128 132.266667z"
+              fill="currentColor"
+            ></path>
+          </svg>
+        </span>
+
+        <span v-show="isBackOpen" class="back-btn__chev back-btn__chev--left" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path
+              d="M290.133333 448H896v85.333333H290.133333l132.266667 132.266667L362.666667 725.333333 128 490.666667 362.666667 256l59.733333 59.733333-132.266667 132.266667z"
+              fill="currentColor"
+            ></path>
+          </svg>
+        </span>
+
+        <span v-show="isBackOpen" class="back-btn__text">{{ backText }}</span>
+      </button>
+
       <div v-if="isLoading" class="loading" role="status" aria-live="polite">
         Loading…
       </div>
 
       <div v-else-if="article" class="detail">
         <header class="hero" aria-label="Article header">
-          <div class="hero-meta" role="group" aria-label="Article meta">
+          <div class="hero-meta reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '90ms' }" role="group" aria-label="Article meta">
             <time class="hero-meta__item" :datetime="article.publishedAt">
               {{ formatDateLong(article.publishedAt, i18n.locale) }}
             </time>
@@ -15,15 +52,15 @@
             <span class="hero-meta__item">{{ t(`news.categories.${article.category}`) }}</span>
           </div>
 
-          <h1 class="hero-title">{{ article.title }}</h1>
-          <p v-if="dekText" class="hero-dek">
+          <h1 class="hero-title reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '150ms' }">{{ article.title }}</h1>
+          <p v-if="dekText" class="hero-dek reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '220ms' }">
             {{ dekText }}
           </p>
         </header>
 
-        <div class="divider" aria-hidden="true"></div>
+        <div class="divider reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '300ms' }" aria-hidden="true"></div>
 
-        <div class="actions">
+        <div class="actions reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '360ms' }">
           <button class="share-btn" type="button" @click="onShare" :aria-label="shareAria">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -53,23 +90,33 @@
         </div>
 
         <div class="content">
-          <p v-for="(p, idx) in bodyParagraphs" :key="idx" class="para">
+          <p
+            v-for="(p, idx) in bodyParagraphs"
+            :key="idx"
+            class="para reveal"
+            :class="{ 'is-in': pageEnter }"
+            :style="{ '--d': `${Math.min(900, 420 + idx * 70)}ms` }"
+          >
             {{ p }}
           </p>
         </div>
       </div>
 
       <div v-else class="not-found">
-        <h1 class="nf-title">Not found</h1>
-        <p class="nf-text">This article does not exist or has been removed.</p>
-        <button class="nf-back" type="button" @click="router.push('/news')">Back to News</button>
+        <h1 class="nf-title reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '120ms' }">Not found</h1>
+        <p class="nf-text reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '180ms' }">
+          This article does not exist or has been removed.
+        </p>
+        <button class="nf-back reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '240ms' }" type="button" @click="router.push('/news')">
+          Back to News
+        </button>
       </div>
     </div>
   </section>
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18nStore } from '@/stores/i18n'
 import { formatDateLong, getNewsBySlug } from '@/services/newsService'
@@ -81,8 +128,150 @@ const i18n = useI18nStore()
 const t = (key, vars) => i18n.t(key, vars)
 const errorStore = useErrorStore()
 
+const pageEnter = ref(false)
 const article = ref(null)
 const isLoading = ref(false)
+
+const isBackOpen = ref(false)
+let backCloseTimerId = null
+const isBackPressed = ref(false)
+const isBackDragging = ref(false)
+const suppressBackClickOnce = ref(false)
+const backDragX = ref(0)
+const backDragY = ref(0)
+let backPointerId = null
+let backStartClientX = 0
+let backStartClientY = 0
+let backStartDragX = 0
+let backStartDragY = 0
+let backMoved = false
+
+const backText = computed(() => (i18n.locale === 'zh' ? '返回' : 'BACK'))
+const backAriaLabel = computed(() => (i18n.locale === 'zh' ? '返回' : 'Back'))
+const backBtnStyle = computed(() => ({
+  '--drag-x': `${backDragX.value}px`,
+  '--drag-y': `${backDragY.value}px`,
+}))
+
+function openBack(fromPointerDown = false) {
+  isBackOpen.value = true
+  if (backCloseTimerId) {
+    window.clearTimeout(backCloseTimerId)
+    backCloseTimerId = null
+  }
+}
+
+function scheduleCloseBack() {
+  if (backCloseTimerId) window.clearTimeout(backCloseTimerId)
+  backCloseTimerId = window.setTimeout(() => {
+    isBackOpen.value = false
+    backCloseTimerId = null
+  }, 900)
+}
+
+function closeBackNow() {
+  if (backCloseTimerId) {
+    window.clearTimeout(backCloseTimerId)
+    backCloseTimerId = null
+  }
+  isBackOpen.value = false
+}
+
+function onBack() {
+  if (suppressBackClickOnce.value) {
+    suppressBackClickOnce.value = false
+    return
+  }
+  // "Back" semantics: prefer real history back; fallback to News list.
+  if (window.history.length > 1) router.back()
+  else router.push({ name: 'news' })
+}
+
+function onBackPointerDown(e) {
+  // Left-click / touch / pen only
+  if (e.button != null && e.button !== 0) return
+
+  openBack(true)
+  isBackPressed.value = true
+  isBackDragging.value = true
+  suppressBackClickOnce.value = false
+
+  backPointerId = e.pointerId
+  backStartClientX = e.clientX
+  backStartClientY = e.clientY
+  backStartDragX = backDragX.value
+  backStartDragY = backDragY.value
+  backMoved = false
+
+  try {
+    e.currentTarget?.setPointerCapture?.(e.pointerId)
+  } catch {
+    // no-op
+  }
+}
+
+function onBackPointerLeave(e) {
+  // While pressed/dragging (especially on touch), do not collapse.
+  if (isBackDragging.value || isBackPressed.value) return
+  closeBackNow()
+}
+
+function onBackPointerMove(e) {
+  if (!isBackDragging.value) return
+  if (backPointerId == null || e.pointerId !== backPointerId) return
+
+  const dx = e.clientX - backStartClientX
+  const dy = e.clientY - backStartClientY
+
+  if (!backMoved && Math.hypot(dx, dy) >= 6) backMoved = true
+
+  backDragX.value = backStartDragX + dx
+  backDragY.value = backStartDragY + dy
+}
+
+function endBackDrag(e, { cancelled } = { cancelled: false }) {
+  if (backPointerId != null) {
+    try {
+      e?.currentTarget?.releasePointerCapture?.(backPointerId)
+    } catch {
+      // no-op
+    }
+  }
+
+  backPointerId = null
+  isBackDragging.value = false
+  isBackPressed.value = false
+
+  // If user actually dragged, prevent the "click" from firing navigation.
+  if (backMoved) suppressBackClickOnce.value = true
+
+  // Force snap-back to the left edge only (keep vertical position)
+  backDragX.value = 0
+  backMoved = false
+
+  if (!cancelled) scheduleCloseBack()
+  else closeBackNow()
+}
+
+function onBackPointerUp(e) {
+  endBackDrag(e, { cancelled: false })
+}
+
+function onBackPointerCancel(e) {
+  endBackDrag(e, { cancelled: true })
+}
+
+onBeforeUnmount(() => {
+  if (backCloseTimerId) window.clearTimeout(backCloseTimerId)
+})
+
+async function triggerEnterAnimation() {
+  pageEnter.value = false
+  await nextTick()
+  requestAnimationFrame(() => {
+    pageEnter.value = true
+  })
+}
 
 async function loadArticle() {
   const slug = String(route.params.slug || '')
@@ -91,6 +280,8 @@ async function loadArticle() {
     return
   }
 
+  // Ensure we don't start animations until content is ready
+  pageEnter.value = false
   isLoading.value = true
   try {
     article.value = await getNewsBySlug(slug)
@@ -103,6 +294,9 @@ async function loadArticle() {
   } finally {
     isLoading.value = false
   }
+
+  // Start reveal only after DOM has rendered new content
+  await triggerEnterAnimation()
 }
 
 onMounted(() => {
@@ -185,6 +379,33 @@ async function onShare() {
 </script>
 
 <style scoped>
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, 22px, 0);
+  filter: blur(10px);
+  transition:
+    opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--d, 0ms);
+  will-change: opacity, transform, filter;
+}
+
+.reveal.is-in {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  filter: blur(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    transition: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
 .detail-page {
   background: #fbfbfb;
   padding: 120px 24px 80px;
@@ -193,6 +414,136 @@ async function onShare() {
 .detail-container {
   max-width: 1100px;
   margin: 0 auto;
+}
+
+.back-btn {
+  position: fixed;
+  top: 96px; /* below fixed NavBar */
+  left: 0;
+  z-index: 20;
+  height: 38px;
+  width: 44px;
+  padding: 0 12px;
+  border-radius: 0 999px 999px 0;
+  border: 2px solid #000000;
+  background: #ffffff;
+  color: #000000;
+  cursor: grab;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  overflow: hidden;
+  user-select: none;
+  touch-action: none;
+  transition:
+    width 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.18s ease,
+    box-shadow 0.15s ease;
+  will-change: width;
+  transform: translate3d(var(--drag-x, 0px), var(--drag-y, 0px), 0) scale(1);
+}
+
+.back-btn.is-open {
+  width: 142px;
+  justify-content: flex-start;
+  padding: 0 16px 0 12px;
+}
+
+.back-btn:hover {
+  background: #000000;
+  color: #ffffff;
+}
+
+.back-btn.is-pressed,
+.back-btn:active {
+  background: #000000;
+  color: #ffffff;
+  transform: translate3d(var(--drag-x, 0px), var(--drag-y, 0px), 0) scale(0.98);
+}
+
+.back-btn:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.6);
+  outline-offset: 3px;
+}
+
+.back-btn.is-dragging {
+  cursor: grabbing;
+  transition:
+    width 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.back-btn__icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-btn__chev {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 18px;
+  transition:
+    opacity 160ms ease,
+    transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.back-btn__chev--right {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.back-btn__chev--left {
+  opacity: 0;
+  transform: translate3d(-8px, 0, 0);
+}
+
+.back-btn.is-open .back-btn__chev--right {
+  opacity: 0;
+  transform: translate3d(10px, 0, 0);
+}
+
+.back-btn.is-open .back-btn__chev--left {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.back-btn__text {
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1;
+  opacity: 0;
+  transform: translate3d(-10px, 0, 0);
+  transition:
+    opacity 160ms ease,
+    transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.back-btn.is-open .back-btn__text {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+@media (max-width: 860px) {
+  .back-btn {
+    top: 86px;
+    height: 36px;
+  }
+  .back-btn.is-open {
+    width: 132px;
+  }
 }
 
 .loading {

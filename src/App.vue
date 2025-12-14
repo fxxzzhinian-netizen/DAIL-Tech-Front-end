@@ -6,6 +6,8 @@
 
     <!-- 全局错误提示 -->
     <ErrorAlert />
+    <!-- 全局警示提示（黄色） -->
+    <WarningAlert />
     <!-- 全局成功提示（绿色） -->
     <SuccessAlert />
 
@@ -26,6 +28,7 @@ import { useUserStore } from '@/stores/user'
 import NavBar from './components/NavBar.vue'
 import LoaderOverlay from './components/LoaderOverlay.vue'
 import ErrorAlert from './components/ErrorAlert.vue'
+import WarningAlert from './components/WarningAlert.vue'
 import SuccessAlert from './components/SuccessAlert.vue'
 
 const router = useRouter()

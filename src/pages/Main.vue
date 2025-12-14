@@ -186,12 +186,7 @@ const isMounted = ref(false)
 
 let timer = null
 
-  const onNewsClick = (item) => {
-    const slug = String(item?.slug || '').trim()
-    if (slug) {
-      router.push({ name: 'news-detail', params: { slug } })
-      return
-    }
+  const onNewsClick = () => {
     router.push('/news')
   }
 

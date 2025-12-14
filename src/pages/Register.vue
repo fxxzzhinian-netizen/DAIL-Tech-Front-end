@@ -151,11 +151,13 @@ import { useRouter } from 'vue-router'
 import bgVideo from '@/assets/images/section4.webm'
 import { useI18nStore } from '@/stores/i18n'
 import { useErrorStore } from '@/stores/error'
+import { useWarningStore } from '@/stores/warning'
 
 const router = useRouter()
 const i18n = useI18nStore()
 const t = (key, vars) => i18n.t(key, vars)
 const errorStore = useErrorStore()
+const warningStore = useWarningStore()
 
 const splitLabel = (s) => Array.from(String(s || ''))
 const toNbsp = (ch) => (ch === ' ' ? '\u00A0' : ch)
@@ -257,7 +259,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const sendCode = async () => {
   const p = phone.value.trim()
   if (!p) {
-    errorStore.showError(t('auth.errEnterPhoneFirst'))
+    warningStore.showWarning(t('auth.errEnterPhoneFirst'))
     return
   }
 
@@ -308,7 +310,7 @@ const handleRegister = async () => {
   if (registerLoading.value) return
 
   if (password.value !== confirmPassword.value) {
-    errorStore.showError(t('auth.errPasswordMismatch'))
+    warningStore.showWarning(t('auth.errPasswordMismatch'))
     return
   }
 
