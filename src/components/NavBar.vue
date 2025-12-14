@@ -73,7 +73,7 @@
           <a href="#" class="dropdown-item">{{ t('nav.companyAbout') }}</a>
           <a href="#" class="dropdown-item">{{ t('nav.companyTeam') }}</a>
           <a href="#" class="dropdown-item">{{ t('nav.companyCareers') }}</a>
-          <a href="#" class="dropdown-item">{{ t('nav.companyNews') }}</a>
+          <a href="/news" class="dropdown-item" @click.prevent="router.push('/news')">{{ t('nav.companyNews') }}</a>
         </div>
       </div>
 
@@ -202,7 +202,7 @@ onBeforeUnmount(() => {
   grid-template-columns: auto 1fr auto;
   align-items: center;
   box-sizing: border-box;
-  z-index: 3; /* 覆盖在背景视频之上 */
+  z-index: 1000; /* keep dropdown above all pages */
   transition: background 0.25s ease, box-shadow 0.25s ease;
 }
 
@@ -261,7 +261,7 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   height: 20px; /* 桥接区域高度，确保鼠标移动路径连续 */
-  z-index: 9;
+  z-index: 1001;
   pointer-events: auto;
 }
 
@@ -313,7 +313,7 @@ onBeforeUnmount(() => {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease, transform 0.2s ease;
-  z-index: 10;
+  z-index: 1002;
 }
 
 /* 不同分组单独控制最大宽度 */

@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import videoSrc from '@/assets/images/section4.webm'
 
 const ctaRef = ref(null)
@@ -60,41 +60,75 @@ const isVisible = ref(false)
 let observer = null
 
 onMounted(() => {
-  // 使用 Intersection Observer 检测元素进入视口
-  observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          // 元素进入视口后，延迟100ms开始动画（让 CSS 的 delay 去控制顺序）
-          setTimeout(() => {
-            isVisible.value = true
-          }, 100)
-          // 一旦触发就取消观察，避免重复触发
-          if (observer) {
-            observer.unobserve(entry.target)
-          }
-        }
-      })
-    },
-    {
-      threshold: 0.3, // 当30%的元素可见时触发
-      rootMargin: '0px 0px -20% 0px' // 只有当元素顶部进入视口上半部分时才触发
-    }
-  )
+  const reveal = () => {
+    // 防止重复触发
+    if (isVisible.value) return
+    isVisible.value = true
 
-  // 等待 DOM 渲染完成后再观察
-  setTimeout(() => {
-    if (ctaRef.value) {
-      observer.observe(ctaRef.value)
+    // 触发一次后就彻底断开，避免后续回调/内存泄漏
+    if (observer) {
+      observer.disconnect()
+      observer = null
     }
-  }, 100)
+  }
+
+  const isElementInViewport = (el) => {
+    if (!el) return false
+    const rect = el.getBoundingClientRect()
+    const vh = window.innerHeight || document.documentElement.clientHeight || 0
+    // 给一个比较“宽松但不太早”的判定区间，避免永远触发不了
+    return rect.top <= vh * 0.85 && rect.bottom >= vh * 0.15
+  }
+
+  const setup = async () => {
+    await nextTick()
+    const el = ctaRef.value
+    if (!el) return
+
+    // 如果一开始就已经在视口内（例如刷新/锚点跳转），直接触发动画
+    if (isElementInViewport(el)) {
+      requestAnimationFrame(reveal)
+      return
+    }
+
+    // IntersectionObserver 不可用/构造失败时，降级为直接展示（至少不至于一直 opacity:0）
+    if (typeof window === 'undefined' || typeof window.IntersectionObserver === 'undefined') {
+      requestAnimationFrame(reveal)
+      return
+    }
+
+    try {
+      observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              // 用 rAF 确保在下一帧应用 class，避免部分浏览器“加了 class 但动画不跑”的边缘情况
+              requestAnimationFrame(reveal)
+              break
+            }
+          }
+        },
+        {
+          threshold: 0.15, // 更容易触发，避免因为阈值导致永远不触发
+          rootMargin: '0px 0px -10% 0px'
+        }
+      )
+
+      observer.observe(el)
+    } catch (e) {
+      // rootMargin 格式/兼容性等异常：直接展示
+      requestAnimationFrame(reveal)
+    }
+  }
+
+  setup()
 })
 
 onBeforeUnmount(() => {
-  if (observer && ctaRef.value) {
-    observer.unobserve(ctaRef.value)
+  if (observer) {
+    observer.disconnect()
+    observer = null
   }
-  observer = null
 })
 </script>
 
@@ -124,6 +158,33 @@ onBeforeUnmount(() => {
   }
 }
 
+/* 更明显的入场（给大标题/按钮用） */
+@keyframes fadeInSlideStrongKeyframes {
+  from {
+    opacity: 0;
+    transform: translateX(-80px);
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes fadeInSlideRightStrongKeyframes {
+  from {
+    opacity: 0;
+    transform: translateX(80px);
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
 /* 2. 基础状态 */
 .fade-in-slide {
   opacity: 0;
@@ -139,20 +200,23 @@ onBeforeUnmount(() => {
 /* 4. 不同组件的配置 (覆盖上方通用设置) */
 
 /* 小标题：立即出现 */
-.cta-preheadline.fade-in-slide {
+.cta-preheadline.fade-in-slide.animate {
   animation-delay: 0s;
+  animation-duration: 1.1s;
 }
 
-/* 大标题：延迟 0.2s，从右侧滑入 */
-.cta-headline.fade-in-slide {
-  animation-delay: 0.4s; /* 缩短延迟 */
-  animation-name: fadeInSlideRightKeyframes;
+/* 大标题：更久、更明显，从右侧滑入 */
+.cta-headline.fade-in-slide.animate {
+  animation-delay: 0.55s;
+  animation-duration: 1.9s;
+  animation-name: fadeInSlideRightStrongKeyframes;
 }
 
-/* 按钮组：延迟 0.4s，从左侧滑入 */
-.cta-buttons.fade-in-slide {
-  animation-delay: 0.6s; /* 缩短延迟 */
-  animation-name: fadeInSlideKeyframes;
+/* 按钮组：更久、更明显，从左侧滑入 */
+.cta-buttons.fade-in-slide.animate {
+  animation-delay: 1.15s;
+  animation-duration: 2.1s;
+  animation-name: fadeInSlideStrongKeyframes;
 }
 
 /* 整个 section，白底，内容竖直居中 */

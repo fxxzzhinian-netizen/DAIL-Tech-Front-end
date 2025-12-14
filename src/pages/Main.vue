@@ -11,6 +11,11 @@
      ></video>
       <div class="hero-inner">
         <div class="hero-left">
+          <newscard
+            class="hero-newscard fade-in-up"
+            :class="{ animate: isMounted }"
+            @click="onNewsClick"
+          />
           <h1 class="hero-title fade-in-up" :class="{ 'animate': isMounted }">
             {{ t('hero.titleLine1') }}
             <br />
@@ -121,7 +126,9 @@
   
   <script setup>
   import { ref, onMounted, onBeforeUnmount, inject, watch } from 'vue'
+  import { useRouter } from 'vue-router'
   import { useI18nStore } from '@/stores/i18n'
+  import newscard from '@/components/newscard.vue'
   import hero1 from '@/assets/images/hero-1.png'
   import hero2 from '@/assets/images/hero-2.png'
   import hero3 from '@/assets/images/hero-3.png'
@@ -131,6 +138,7 @@
 
 const i18n = useI18nStore()
 const t = (key, vars) => i18n.t(key, vars)
+const router = useRouter()
 
 const heroImages = [
   {
@@ -177,6 +185,15 @@ const TOTAL = 3
 const isMounted = ref(false)
 
 let timer = null
+
+  const onNewsClick = (item) => {
+    const slug = String(item?.slug || '').trim()
+    if (slug) {
+      router.push({ name: 'news-detail', params: { slug } })
+      return
+    }
+    router.push('/news')
+  }
 
   const startCarousel = () => {
     stopCarousel()
@@ -235,7 +252,7 @@ let timer = null
 /* ---------------- 基础布局 (保持不变) ---------------- */
   .hero {
   background: #ffffff;
-  padding: 140px 24px 80px; /* 增加顶部留白以容纳绝对定位的导航栏 */
+  padding: 180px 24px 80px; /* 增加顶部留白以容纳绝对定位的导航栏 */
   position: relative;
   overflow: hidden;
 }
@@ -287,7 +304,7 @@ let timer = null
   right: 0;
   top: -10%;
   width: 100%;
-  height: 120%;
+  height: 140%;
   object-fit: cover;
   z-index: 0;
   filter: brightness(0.9);
@@ -297,7 +314,7 @@ let timer = null
   max-width: 1500px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 40px;
   align-items: center;
   box-sizing: border-box;
@@ -310,6 +327,12 @@ let timer = null
     display: flex;
     flex-direction: column;
     gap: 24px;
+    margin-top: -80px; /* 左半部分整体上移*/
+  }
+
+  .hero-newscard {
+    align-self: flex-start;
+    margin-bottom: 18px; /* 拉开与下方标题的距离 */
   }
   /* ---------------- 动画样式修正 ---------------- */
 
@@ -358,7 +381,7 @@ let timer = null
   
   .hero-subtitle {
     margin-top: 12px;
-    max-width: 520px;
+    max-width: 640px;
     font-size: 15px;
     line-height: 1.7;
     color: #4b5563;
@@ -488,7 +511,7 @@ let timer = null
   position: relative;
   background-color: transparent;
   isolation: isolate;
-  height: 400px;
+  height: 440px;
   border-radius: 24px 24px 0 0;
 }
 

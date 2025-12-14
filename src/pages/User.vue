@@ -33,6 +33,19 @@
               <span class="nav-text">{{ t('user.navDominate') }}</span>
               <span class="nav-desc">{{ t('user.navDominateDesc') }}</span>
             </button>
+
+            <button
+              class="nav-item float-in"
+              :style="{ '--d': '200ms' }"
+              :class="{ active: activeTab === 'news', animate: isMounted }"
+              type="button"
+              :disabled="!canPublishNews"
+              :title="!canPublishNews ? t('user.newsNoAccessText') : ''"
+              @click="activeTab = 'news'"
+            >
+              <span class="nav-text">{{ t('user.navNews') }}</span>
+              <span class="nav-desc">{{ t('user.navNewsDesc') }}</span>
+            </button>
           </nav>
   
           <div class="sidebar-footer">
@@ -91,15 +104,10 @@
           <!-- 顶部标题 -->
           <header class="content-header">
             <h2 class="content-title float-in" :style="{ '--d': '80ms' }" :class="{ animate: contentAnimate }">
-              {{ activeTab === 'profile' ? t('user.headerProfile') : t('user.headerDominate') }}
+              {{ headerText }}
             </h2>
             <p class="content-subtitle float-in" :style="{ '--d': '140ms' }" :class="{ animate: contentAnimate }">
-              <template v-if="activeTab === 'profile'">
-                {{ t('user.subtitleProfile') }}
-              </template>
-              <template v-else>
-                {{ t('user.subtitleDominate') }}
-              </template>
+              {{ subtitleText }}
             </p>
           </header>
   
@@ -141,8 +149,31 @@
                 </div>
                   </div>
 
+              <!-- Created At (read-only) -->
+              <div class="info-card float-in" :style="{ '--d': '310ms' }" :class="{ animate: contentAnimate }">
+                <div class="info-icon" aria-hidden="true">
+                  <!-- clock -->
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 7v5l3 2"></path>
+                  </svg>
+                </div>
+
+                <div class="info-body">
+                  <div class="info-title">{{ t('user.createdAt') }}</div>
+                  <div class="info-value">{{ createdAtText }}</div>
+                </div>
+              </div>
+
               <!-- Birthday -->
-              <div class="info-card float-in" :style="{ '--d': '340ms' }" :class="{ animate: contentAnimate }">
+              <button
+                class="info-card info-card--action float-in"
+                :style="{ '--d': '340ms' }"
+                :class="{ animate: contentAnimate }"
+                type="button"
+                @click="openEdit('birthday')"
+                :aria-label="birthdayRaw ? t('user.editBirthdayAria') : t('user.setBirthdayAria')"
+              >
                 <div class="info-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 21H4v-7a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4z"/>
@@ -157,10 +188,32 @@
                   <div class="info-title">{{ t('user.birthday') }}</div>
                   <div class="info-value">{{ birthdayText }}</div>
                   </div>
+                <div class="info-action" aria-hidden="true">
+                  <span class="info-action-badge" :title="birthdayRaw ? t('user.edit') : t('user.set')">
+                    <!-- edit-2 (Feather) -->
+                    <svg v-if="birthdayRaw" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 3 21l.5-4.5L17 3z"></path>
+                      <path d="m15 5 4 4"></path>
+                    </svg>
+                    <!-- plus-circle (Feather) -->
+                    <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M12 8v8"></path>
+                      <path d="M8 12h8"></path>
+                    </svg>
+                  </span>
                 </div>
+              </button>
 
               <!-- Email -->
-              <div class="info-card float-in" :style="{ '--d': '400ms' }" :class="{ animate: contentAnimate }">
+              <button
+                class="info-card info-card--action float-in"
+                :style="{ '--d': '400ms' }"
+                :class="{ animate: contentAnimate }"
+                type="button"
+                @click="openEdit('email')"
+                :aria-label="(profileEmail || userStore.email) ? t('user.editEmailAria') : t('user.setEmailAria')"
+              >
                 <div class="info-icon" aria-hidden="true">
                   <!-- mail -->
                   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -173,12 +226,27 @@
                   <div class="info-title">{{ t('user.email') }}</div>
                   <div class="info-value">{{ emailText }}</div>
                 </div>
-              </div>
+                <div class="info-action" aria-hidden="true">
+                  <span class="info-action-badge" :title="(profileEmail || userStore.email) ? t('user.edit') : t('user.set')">
+                    <!-- edit-2 (Feather) -->
+                    <svg v-if="(profileEmail || userStore.email)" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 3 21l.5-4.5L17 3z"></path>
+                      <path d="m15 5 4 4"></path>
+                    </svg>
+                    <!-- plus-circle (Feather) -->
+                    <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M12 8v8"></path>
+                      <path d="M8 12h8"></path>
+                    </svg>
+                  </span>
+                </div>
+              </button>
             </div>
           </section>
   
           <!-- Dominate -->
-          <section v-else class="panel">
+          <section v-else-if="activeTab === 'dominate'" class="panel">
             <div class="panel-inner">
               <div class="placeholder">
                 <div class="placeholder-title float-in" :style="{ '--d': '200ms' }" :class="{ animate: contentAnimate }">{{ t('user.dominateComingSoonTitle') }}</div>
@@ -191,7 +259,120 @@
               </div>
             </div>
           </section>
+
+          <!-- News -->
+          <section v-else class="panel panel--news">
+            <div v-if="!canPublishNews" class="placeholder">
+              <div class="placeholder-title">{{ t('user.newsNoAccessTitle') }}</div>
+              <div class="placeholder-text">{{ t('user.newsNoAccessText') }}</div>
+            </div>
+
+            <div v-else class="news-hub">
+              <div class="news-choice">
+                <div class="profile-cards">
+                  <button
+                    class="info-card info-card--action float-in"
+                    :class="{ animate: contentAnimate }"
+                    :style="{ '--d': '120ms' }"
+                    type="button"
+                    @click="router.push({ name: 'news-preview' })"
+                  >
+                    <div class="info-icon" aria-hidden="true">
+                      <!-- send -->
+                      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 2 11 13"></path>
+                        <path d="M22 2 15 22 11 13 2 9 22 2"></path>
+                      </svg>
+                    </div>
+
+                    <div class="info-body">
+                      <div class="info-title">{{ t('user.newsPublishTab') }}</div>
+                      <div class="info-value">{{ t('user.newsPublish') }}</div>
+                    </div>
+                  </button>
+
+                  <button
+                    class="info-card info-card--action float-in"
+                    :class="{ animate: contentAnimate }"
+                    :style="{ '--d': '200ms' }"
+                    type="button"
+                    @click="router.push({ name: 'news-delete' })"
+                  >
+                    <div class="info-icon" aria-hidden="true">
+                      <!-- trash -->
+                      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18"></path>
+                        <path d="M8 6V4h8v2"></path>
+                        <path d="M6 6l1 16h10l1-16"></path>
+                        <path d="M10 11v6"></path>
+                        <path d="M14 11v6"></path>
+                      </svg>
+                    </div>
+
+                    <div class="info-body">
+                      <div class="info-title">{{ t('user.newsDeleteTab') }}</div>
+                      <div class="info-value">{{ t('user.newsDelete') }}</div>
+                    </div>
+                  </button>
+                </div>
+                </div>
+            </div>
+          </section>
         </main>
+      </div>
+
+      <!-- Edit Modal (Birthday / Email) -->
+      <div v-if="isEditOpen" class="modal-layer" role="dialog" aria-modal="true" :aria-label="editModalTitle" @keydown.esc.prevent="closeEdit">
+        <div class="modal-backdrop" @click="closeEdit" aria-hidden="true"></div>
+        <div class="modal" @click.stop>
+          <div class="modal-header">
+            <div class="modal-title">{{ editModalTitle }}</div>
+            <button type="button" class="modal-close" @click="closeEdit" :aria-label="t('user.closeDialogAria')">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18" />
+                <path d="M6 6 18 18" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <label class="modal-label" :for="editInputId">{{ editFieldLabel }}</label>
+
+            <div v-if="editKey === 'birthday'" class="date-row" :id="editInputId">
+              <select class="modal-select" v-model="draftBirthYear" :aria-label="t('user.birthYear')">
+                <option value="">{{ t('user.birthYear') }}</option>
+                <option v-for="y in birthYearOptions" :key="y" :value="String(y)">{{ y }}</option>
+              </select>
+              <select class="modal-select" v-model="draftBirthMonth" :aria-label="t('user.birthMonth')">
+                <option value="">{{ t('user.birthMonth') }}</option>
+                <option v-for="m in 12" :key="m" :value="String(m)">{{ String(m).padStart(2, '0') }}</option>
+              </select>
+              <select class="modal-select" v-model="draftBirthDay" :aria-label="t('user.birthDay')">
+                <option value="">{{ t('user.birthDay') }}</option>
+                <option v-for="d in birthDayOptions" :key="d" :value="String(d)">{{ String(d).padStart(2, '0') }}</option>
+              </select>
+            </div>
+
+            <input
+              v-else
+              :id="editInputId"
+              class="modal-input"
+              type="email"
+              v-model="draftValue"
+              :placeholder="t('user.emailPlaceholder')"
+              :aria-invalid="emailError ? 'true' : 'false'"
+              autocomplete="email"
+              inputmode="email"
+            />
+
+            <div v-if="emailError" class="modal-error" role="alert">{{ emailError }}</div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="modal-btn ghost" @click="closeEdit" :disabled="isSavingEdit">{{ t('user.cancel') }}</button>
+            <button type="button" class="modal-btn primary" @click="saveEdit" :disabled="isSavingEdit">{{ t('user.confirm') }}</button>
+          </div>
+        </div>
       </div>
     </section>
   </template>
@@ -200,18 +381,63 @@
   import { ref, computed, onMounted, watch, nextTick } from 'vue'
   import { useRouter } from 'vue-router'
   import { useUserStore } from '@/stores/user'
+  import { useErrorStore } from '@/stores/error'
+  import { useSuccessStore } from '@/stores/success'
   import { useI18nStore } from '@/stores/i18n'
   import bgVideo from '@/assets/images/section4.webm'
   
   const router = useRouter()
   const userStore = useUserStore()
+  const errorStore = useErrorStore()
+  const successStore = useSuccessStore()
   const i18n = useI18nStore()
   const t = (key, vars) => i18n.t(key, vars)
   
   const isMounted = ref(false)
   const contentAnimate = ref(false)
-  const activeTab = ref('profile') // 'profile' | 'dominate'
-  
+  const activeTab = ref('profile') // 'profile' | 'dominate' | 'news'
+
+  const headerText = computed(() => {
+    if (activeTab.value === 'profile') return t('user.headerProfile')
+    if (activeTab.value === 'dominate') return t('user.headerDominate')
+    return t('user.headerNews')
+  })
+
+  const subtitleText = computed(() => {
+    if (activeTab.value === 'profile') return t('user.subtitleProfile')
+    if (activeTab.value === 'dominate') return t('user.subtitleDominate')
+    return t('user.subtitleNews')
+  })
+
+  const canPublishNews = ref(false)
+
+  function todayYmd() {
+    const d = new Date()
+    const yyyy = d.getFullYear()
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  }
+
+  function computeCanPublishNewsFromToken(token) {
+    // Minimal JWT payload inspection. If the backend changes role rules,
+    // the POST response (401/403) will still enforce the source of truth.
+    try {
+      const [, payload] = String(token || '').split('.')
+      if (!payload) return false
+      const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+      const roles = Array.isArray(json?.roles) ? json.roles : []
+      const role = json?.role
+      // Common convention: admin/editor role is 3 (as in your example token)
+      if (roles.includes(3) || role === 3) return true
+      // If token exists but no role claims, allow and let backend decide
+      if (!('roles' in json) && !('role' in json)) return true
+      return false
+    } catch {
+      return !!token
+    }
+  }
+
   function parseApiDate(s) {
     if (!s) return null
     const hasTz = /Z$|[+-]\d{2}:\d{2}$/.test(s)
@@ -264,6 +490,172 @@
     const v = (profileEmail.value || userStore.email || '').trim()
     return v || t('common.notSet')
   })
+
+  const isEditOpen = ref(false)
+  const editKey = ref('email') // 'email' | 'birthday'
+  const draftValue = ref('')
+  const emailError = ref('')
+  const draftBirthYear = ref('')
+  const draftBirthMonth = ref('')
+  const draftBirthDay = ref('')
+  const isSavingEdit = ref(false)
+
+  const editInputId = computed(() => `edit-${editKey.value}`)
+  const editModalTitle = computed(() =>
+    editKey.value === 'birthday' ? t('user.editBirthdayTitle') : t('user.editEmailTitle')
+  )
+  const editFieldLabel = computed(() =>
+    editKey.value === 'birthday' ? t('user.birthday') : t('user.email')
+  )
+
+  const currentYear = computed(() => new Date().getFullYear())
+  const birthYearOptions = computed(() => {
+    // 1900 ~ currentYear, descending for faster picking
+    const out = []
+    for (let y = currentYear.value; y >= 1900; y--) out.push(y)
+    return out
+  })
+
+  const birthDayOptions = computed(() => {
+    const y = parseInt(draftBirthYear.value || '0', 10)
+    const m = parseInt(draftBirthMonth.value || '0', 10)
+    if (!y || !m) return []
+    const daysInMonth = new Date(y, m, 0).getDate()
+    return Array.from({ length: daysInMonth }, (_, i) => i + 1)
+  })
+
+  function normalizeYmd(s) {
+    if (!s) return ''
+    const trimmed = String(s).trim()
+    // already YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed
+    // try Date parse
+    const d = new Date(trimmed)
+    if (Number.isNaN(d.getTime())) return ''
+    const yyyy = d.getFullYear()
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  }
+
+  function openEdit(key) {
+    editKey.value = key === 'birthday' ? 'birthday' : 'email'
+    emailError.value = ''
+    if (editKey.value === 'birthday') {
+      const ymd = normalizeYmd(birthdayRaw.value)
+      if (ymd) {
+        const [y, m, d] = ymd.split('-')
+        draftBirthYear.value = y
+        draftBirthMonth.value = String(parseInt(m, 10))
+        draftBirthDay.value = String(parseInt(d, 10))
+      } else {
+        draftBirthYear.value = ''
+        draftBirthMonth.value = ''
+        draftBirthDay.value = ''
+      }
+    } else {
+      draftValue.value = (profileEmail.value || userStore.email || '').trim()
+    }
+    isEditOpen.value = true
+  }
+
+  function closeEdit() {
+    isEditOpen.value = false
+    emailError.value = ''
+  }
+
+  function isValidEmail(v) {
+    const s = String(v || '').trim()
+    if (!s) return true // allow empty (unset)
+    // lightweight client validation; backend will be source of truth later
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)
+  }
+
+  function extractApiErrorMessage(data, status) {
+    if (Array.isArray(data?.detail)) {
+      const msgs = data.detail
+        .map((it) => it?.msg)
+        .filter((s) => typeof s === 'string' && s.trim().length > 0)
+        .map((s) => s.trim())
+      if (msgs.length) {
+        const uniq = []
+        for (const m of msgs) if (!uniq.includes(m)) uniq.push(m)
+        return uniq.join(' ; ')
+      }
+    }
+    if (typeof data?.detail === 'string' && data.detail.trim()) return data.detail.trim()
+    if (typeof data?.message === 'string' && data.message.trim()) return data.message.trim()
+    if (typeof data === 'string' && data.trim()) return data.trim()
+    return `Request failed (${status})`
+  }
+
+  async function patchMyProfile(patch) {
+    const token = userStore.accessToken
+    if (!token) {
+      throw new Error(t('auth.errLoginFailed'))
+    }
+
+    const res = await fetch('/api/me/profile', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(patch),
+    })
+
+    let data = null
+    try { data = await res.json() } catch (e) {}
+
+    if (!res.ok) {
+      throw new Error(extractApiErrorMessage(data, res.status))
+    }
+    return data
+  }
+
+  async function saveEdit() {
+    if (isSavingEdit.value) return
+    emailError.value = ''
+
+    const patch = {}
+    if (editKey.value === 'email') {
+      const next = String(draftValue.value || '').trim()
+      if (!isValidEmail(next)) {
+        emailError.value = t('user.invalidEmail')
+        return
+      }
+      patch.email = next
+    } else {
+      const y = parseInt(draftBirthYear.value || '0', 10)
+      const m = parseInt(draftBirthMonth.value || '0', 10)
+      const d = parseInt(draftBirthDay.value || '0', 10)
+      patch.birthday = y && m && d
+        ? `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+        : ''
+    }
+
+    isSavingEdit.value = true
+    try {
+      const resp = await patchMyProfile(patch)
+      // 以接口返回为准（如果没返回字段，则回落到本次 patch 值）
+      const nextEmail = Object.prototype.hasOwnProperty.call(patch, 'email') ? (resp?.email ?? patch.email) : undefined
+      const nextBirthday = Object.prototype.hasOwnProperty.call(patch, 'birthday') ? (resp?.birthday ?? patch.birthday) : undefined
+
+      const storePatch = {}
+      if (nextEmail !== undefined) storePatch.email = nextEmail
+      if (nextBirthday !== undefined) storePatch.birthday = nextBirthday
+      userStore.setProfileFields(storePatch)
+
+      if (nextEmail !== undefined) profileEmail.value = String(nextEmail || '')
+
+      closeEdit()
+      successStore.showSuccess(t('common.saved'))
+    } catch (err) {
+      errorStore.showError(err?.message || t('common.comingSoon'))
+    } finally {
+      isSavingEdit.value = false
+    }
+  }
   
   function handleResetProfile() {
     profileName.value = displayName.value
@@ -278,7 +670,7 @@
       phone: profilePhone.value?.trim() || '',
       email: profileEmail.value?.trim() || '',
     })
-    alert(t('common.saved'))
+    successStore.showSuccess(t('common.saved'))
   }
   
   function handleLogout() {
@@ -291,6 +683,7 @@
       isMounted.value = true
       contentAnimate.value = true
     }, 80)
+    canPublishNews.value = computeCanPublishNewsFromToken(userStore.accessToken)
   })
 
   watch(activeTab, async () => {
@@ -300,6 +693,16 @@
       contentAnimate.value = true
     })
   })
+
+  watch(
+    () => userStore.accessToken,
+    () => {
+      canPublishNews.value = computeCanPublishNewsFromToken(userStore.accessToken)
+      if (!userStore.accessToken) {
+        if (activeTab.value === 'news') activeTab.value = 'profile'
+      }
+    }
+  )
   </script>
   
   <style scoped>
@@ -399,6 +802,101 @@
     border-color: rgba(0,0,0,0.90);
     color: #fff;
   }
+
+  .nav-item:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .nav-item:disabled:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* News hub (Publish / Delete) */
+  .news-hub {
+    width: 100%;
+  }
+
+  .panel--news .news-hub {
+    padding: 6px 2px;
+  }
+
+  /* Hover invert (match profile cards) */
+  .news-choice__card:hover .news-choice__card-title {
+    color: #ffffff;
+  }
+
+  .news-choice__card:hover .news-choice__card-sub {
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  .news-choice__card:hover .news-choice__icon {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.22);
+  }
+
+  .news-choice__card:hover .news-choice__action {
+    color: rgba(255, 255, 255, 0.86);
+  }
+
+  .news-choice__card:hover .news-choice__action-badge {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+  }
+
+  .news-switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 2px 0 16px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.10);
+    margin-bottom: 16px;
+  }
+
+  .news-switch__btn {
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    background: rgba(255,255,255,0.7);
+    cursor: pointer;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(15, 23, 42, 0.82);
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .news-switch__btn.active {
+    background: #000000;
+    border-color: #000000;
+    color: #ffffff;
+  }
+
+  .news-switch__back {
+    margin-left: auto;
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    background: transparent;
+    cursor: pointer;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(15, 23, 42, 0.72);
+  }
+
+  .news-switch__back:hover {
+    background: rgba(15, 23, 42, 0.06);
+  }
+
+  /* keep them horizontal when possible; wrap naturally on narrow screens */
   
   .nav-text {
     display: block;
@@ -486,6 +984,8 @@
     padding: 28px 28px;
     box-shadow: 0 22px 60px rgba(0,0,0,0.08);
   }
+
+  /* News publish form now lives in `src/components/NewsPublishForm.vue` */
   
   /* Dominate 占位 */
   .placeholder {
@@ -530,6 +1030,40 @@
     border: 1px solid rgba(0,0,0,0.06);
     box-shadow: 0 12px 30px rgba(0,0,0,0.06);
     transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* Button reset for clickable cards */
+  .info-card--action {
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+  }
+
+  .info-card--action:focus-visible {
+    outline: 3px solid rgba(26, 115, 232, 0.35);
+    outline-offset: 3px;
+  }
+
+  .info-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    color: rgba(15, 23, 42, 0.62);
+    font-weight: 800;
+    letter-spacing: 0.02em;
+  }
+
+  .info-action-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.10);
+    background: rgba(255,255,255,0.6);
+    display: grid;
+    place-items: center;
   }
 
   .info-icon {
@@ -608,6 +1142,193 @@
     color: #ffffff;
     background: rgba(255,255,255,0.12);
     border-color: rgba(255,255,255,0.22);
+  }
+
+  .info-card:hover .info-action {
+    color: rgba(255,255,255,0.86);
+  }
+
+  .info-card:hover .info-action-badge {
+    background: rgba(255,255,255,0.14);
+    border-color: rgba(255,255,255,0.22);
+    color: #ffffff;
+  }
+
+  /* Modal */
+  .modal-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+  }
+
+  .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(6px);
+  }
+
+  .modal {
+    position: relative;
+    width: min(520px, 100%);
+    border-radius: 20px;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid rgba(0,0,0,0.10);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.22);
+    overflow: hidden;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 16px 10px 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+  }
+
+  .modal-title {
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    color: #0f172a;
+    text-transform: uppercase;
+  }
+
+  .modal-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.10);
+    background: rgba(255,255,255,0.7);
+    color: #0f172a;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+
+  .modal-close:hover {
+    background: rgba(0,0,0,0.90);
+    border-color: rgba(0,0,0,0.90);
+    color: #ffffff;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .modal-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 0.03em;
+    color: #0f172a;
+    margin-bottom: 10px;
+  }
+
+  .modal-input {
+    width: 100%;
+    height: 44px;
+    border-radius: 14px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.85);
+    padding: 0 14px;
+    font-size: 14px;
+    outline: none;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  .modal-input:focus {
+    border-color: rgba(26, 115, 232, 0.55);
+    box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.14);
+  }
+
+  .modal-error {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #b91c1c;
+    font-weight: 700;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 16px 16px 16px;
+    border-top: 1px solid rgba(0,0,0,0.08);
+  }
+
+  .modal-btn {
+    border-radius: 999px;
+    padding: 10px 14px;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.65);
+    color: #0f172a;
+    transition: all 0.2s ease;
+  }
+
+  .modal-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 35px rgba(0,0,0,0.10);
+  }
+
+  .modal-btn.primary {
+    background: rgba(0,0,0,0.90);
+    border-color: rgba(0,0,0,0.90);
+    color: #ffffff;
+  }
+
+  .modal-btn.primary:hover {
+    background: #000000;
+  }
+
+  .date-row {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr;
+    gap: 10px;
+  }
+
+  .modal-select {
+    width: 100%;
+    height: 44px;
+    border-radius: 14px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.85);
+    padding: 0 12px;
+    font-size: 14px;
+    outline: none;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  .modal-select:focus {
+    border-color: rgba(26, 115, 232, 0.55);
+    box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.14);
+  }
+
+  @media (max-width: 420px) {
+    .date-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+    .bg-layer {
+      width: 100vw;
+      height: 240px;
+    }
+    .sidebar {
+      border-right: none;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
   }
 
   /* 头像也做反转 */

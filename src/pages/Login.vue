@@ -246,7 +246,8 @@ import { useErrorStore } from '@/stores/error'
 import { useI18nStore } from '@/stores/i18n'
 import bgVideo from '@/assets/images/section4.webm'
 
-const API_BASE = 'http://43.160.245.84:8000'
+// Use Vite proxy: /api -> backend (see vite.config.js)
+const API_BASE = ''
 
 function parseApiDate(s) {
   if (!s) return null
@@ -355,7 +356,7 @@ const welcomeDays = computed(() => {
 })
 
 // 登录人姓名：从 store 获取（本地化兜底）
-const displayName = computed(() => userStore.displayName || t('common.guest'))
+const displayName = computed(() => userStore.displayName || userStore.username || t('common.guest'))
 
 // 从 store 获取 created_at（用于计算 days in DAIL）
 const currentCreatedAt = computed(() => userStore.createdAt)
@@ -583,7 +584,9 @@ const handleSubmit = async () => {
       },
       {
         username: resp?.username || '',
-        created_at: resp?.created_at || ''
+        created_at: resp?.created_at || '',
+        // optional: backend may return display_name (preferred for UI)
+        display_name: resp?.display_name ?? resp?.displayName ?? ''
       },
       remember.value
     )
@@ -1018,7 +1021,7 @@ onMounted(() => {
   }
 
   .form-control input:focus,
-  .form-control input:valid {
+  .form-control input:focus {
     outline: 0;
     border-bottom-color: #1a73e8;
   }
@@ -1039,7 +1042,7 @@ onMounted(() => {
   }
 
   .form-control input:focus + label span,
-  .form-control input:valid + label span {
+  .form-control input:focus + label span {
     color: #1a73e8;
     transform: translateY(-24px);
   }

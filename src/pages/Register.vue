@@ -150,10 +150,12 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import bgVideo from '@/assets/images/section4.webm'
 import { useI18nStore } from '@/stores/i18n'
+import { useErrorStore } from '@/stores/error'
 
 const router = useRouter()
 const i18n = useI18nStore()
 const t = (key, vars) => i18n.t(key, vars)
+const errorStore = useErrorStore()
 
 const splitLabel = (s) => Array.from(String(s || ''))
 const toNbsp = (ch) => (ch === ' ' ? '\u00A0' : ch)
@@ -164,7 +166,8 @@ const codeLabelChars = computed(() => splitLabel(t('auth.labelCode')).map(toNbsp
 const passwordLabelChars = computed(() => splitLabel(t('auth.labelPassword')).map(toNbsp))
 const confirmLabelChars = computed(() => splitLabel(t('auth.labelConfirm')).map(toNbsp))
 
-const API_BASE = 'http://43.160.245.84:8000'
+// Use Vite proxy: /api -> backend (see vite.config.js)
+const API_BASE = ''
 
 const username = ref('')
 const phone = ref('')
@@ -221,15 +224,32 @@ async function postJson(path, body) {
   }
 
   if (!res.ok) {
-    const msg =
-      data?.detail ||
-      data?.message ||
-      (typeof data === 'string' ? data : null) ||
-      `Request failed (${res.status})`
-    throw new Error(msg)
+    throw new Error(extractApiErrorMessage(data, res.status))
   }
 
   return data
+}
+
+function extractApiErrorMessage(data, status) {
+  // FastAPI / Pydantic style:
+  // { detail: [ { loc: [...], msg: '...', type: '...' }, ... ] }
+  if (Array.isArray(data?.detail)) {
+    const msgs = data.detail
+      .map((it) => it?.msg)
+      .filter((s) => typeof s === 'string' && s.trim().length > 0)
+      .map((s) => s.trim())
+    if (msgs.length) {
+      // 去重，保持顺序
+      const uniq = []
+      for (const m of msgs) if (!uniq.includes(m)) uniq.push(m)
+      return uniq.join(' ; ')
+    }
+  }
+
+  if (typeof data?.detail === 'string' && data.detail.trim()) return data.detail.trim()
+  if (typeof data?.message === 'string' && data.message.trim()) return data.message.trim()
+  if (typeof data === 'string' && data.trim()) return data.trim()
+  return `Request failed (${status})`
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -237,7 +257,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const sendCode = async () => {
   const p = phone.value.trim()
   if (!p) {
-    alert(t('auth.errEnterPhoneFirst'))
+    errorStore.showError(t('auth.errEnterPhoneFirst'))
     return
   }
 
@@ -265,7 +285,7 @@ const sendCode = async () => {
     showSendingUI.value = false
     startCountdown(seconds)
   } catch (err) {
-    alert(err?.message || t('auth.errSendCodeFailed'))
+    errorStore.showError(err?.message || t('auth.errSendCodeFailed'))
     showSendingUI.value = false
   } finally {
     sendAnimating.value = false
@@ -288,7 +308,7 @@ const handleRegister = async () => {
   if (registerLoading.value) return
 
   if (password.value !== confirmPassword.value) {
-    alert(t('auth.errPasswordMismatch'))
+    errorStore.showError(t('auth.errPasswordMismatch'))
     return
   }
 
@@ -307,7 +327,7 @@ const handleRegister = async () => {
     // 注册成功：跳回登录页（你也可以改成直接进入首页）
     router.push('/login')
   } catch (err) {
-    alert(err?.message || t('auth.errRegisterFailed'))
+    errorStore.showError(err?.message || t('auth.errRegisterFailed'))
   } finally {
     registerLoading.value = false
   }

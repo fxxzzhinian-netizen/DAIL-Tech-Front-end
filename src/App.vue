@@ -6,6 +6,8 @@
 
     <!-- 全局错误提示 -->
     <ErrorAlert />
+    <!-- 全局成功提示（绿色） -->
+    <SuccessAlert />
 
     <!-- 顶部极简导航 -->
     <NavBar @navigate-home="handleNavigateHome" />
@@ -24,6 +26,7 @@ import { useUserStore } from '@/stores/user'
 import NavBar from './components/NavBar.vue'
 import LoaderOverlay from './components/LoaderOverlay.vue'
 import ErrorAlert from './components/ErrorAlert.vue'
+import SuccessAlert from './components/SuccessAlert.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
