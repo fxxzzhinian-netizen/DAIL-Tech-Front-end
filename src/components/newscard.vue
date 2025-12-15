@@ -227,15 +227,6 @@ const displayText = computed(() => {
   background: rgba(17, 24, 39, 0.06);
 }
 
-@media (max-width: 520px) {
-  .news-card {
-    gap: 10px;
-  }
-  .inner {
-    padding: 6px 12px;
-  }
-}
-
 @keyframes border-hue {
   from {
     filter: saturate(1.05) hue-rotate(0deg);

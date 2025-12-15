@@ -1392,26 +1392,6 @@
     box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.14);
   }
 
-  @media (max-width: 420px) {
-    .date-row {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .layout {
-      grid-template-columns: 1fr;
-    }
-    .bg-layer {
-      width: 100vw;
-      height: 240px;
-    }
-    .sidebar {
-      border-right: none;
-      border-bottom: 1px solid rgba(0,0,0,0.08);
-    }
-  }
-
   /* 头像也做反转 */
   .info-card:hover .avatar {
     background: #ffffff;

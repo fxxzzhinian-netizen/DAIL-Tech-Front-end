@@ -580,41 +580,6 @@ watch(
   color: #ffffff;
 }
 
-@media (max-width: 1100px) {
-  .grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 860px) {
-  .news-title {
-    font-size: 52px;
-  }
-  .news-controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 520px) {
-  .news-page {
-    padding: 108px 18px 60px;
-  }
-  .menu {
-    justify-content: flex-start;
-  }
-  .link:hover,
-  .link:focus-visible,
-  .link.active {
-    width: 132px;
-  }
-  .grid {
-    grid-template-columns: 1fr;
-  }
-}
 </style>
 
 

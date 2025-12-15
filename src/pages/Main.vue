@@ -661,40 +661,4 @@ let timer = null
     color: #111827;
   }
   
-/* 响应式 */
-  @media (max-width: 960px) {
-    .hero {
-      padding: 40px 20px 48px;
-    }
-    .hero-inner {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 40px;
-    }
-    .hero-right {
-    order: -1;
-    }
-    .hero-title {
-      font-size: 40px;
-    }
-  .device-shot {
-      height: 320px;
-    }
-    .apollo-badge {
-      top: 24px;
-      width: 90px;
-      height: 90px;
-    font-size: 12px;
-  }
-  
-  .pos-right {
-    right: 24px;
-    }
-  
-  .pos-left {
-    left: 24px;
-  }
-    .hero-features {
-      grid-template-columns: 1fr;
-    }
-  }
   </style>

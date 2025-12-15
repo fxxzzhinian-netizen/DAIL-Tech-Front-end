@@ -341,11 +341,6 @@ const paragraphCount = computed(() => {
   box-shadow: none !important;
 }
 
-@media (max-width: 640px) {
-  .np__grid {
-    grid-template-columns: 1fr;
-  }
-}
 </style>
 
 

@@ -275,16 +275,6 @@ const letters = computed(() =>
   letter-spacing: 0.12em;
 }
 
-@media only screen and (max-width: 767px) {
-  .loader-inner {
-    flex-direction: column;
-    gap: 20px;
-  }
-  .loader-wrap-heading .load-text {
-    font-size: 40px;
-  }
-}
-
 /* 逐字闪烁 */
 .load-text span {
   animation: loading 1s infinite alternate;

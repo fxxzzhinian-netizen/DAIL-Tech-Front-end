@@ -785,39 +785,4 @@ onBeforeUnmount(() => {
   text-underline-offset: 4px;
 }
 
-/* ================= 响应式 ================= */
-@media (max-width: 1100px) {
-  .register-page {
-    grid-template-columns: 1fr;
-    /* 移动端通常注册表单较长，建议由内容撑开 */
-  }
-
-  /* 移动端布局：视频在上，表单在下 */
-  .right-panel {
-    height: 200px; /* 视频高度 */
-    order: -1; /* 让右侧面板排到最前面（上面） */
-    overflow: hidden;
-  }
-  
-  .left-panel {
-    background: #fff;
-    padding: 32px 24px;
-  }
-
-  .video-container {
-    width: 100%;
-    left: 0;
-    height: 100%;
-  }
-
-  /* 移动端遮罩改回上下渐变 */
-  .video-mask {
-    background: 
-      linear-gradient(to bottom, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 25%),
-      linear-gradient(to top, #ffffff 0%, rgba(255,255,255,1) 15%, rgba(255,255,255,0) 50%);
-  }
-  
-  .tagline { display: none; } /* 移动端空间小，可选隐藏大标题 */
-  .founded-days { display: none; }
-}
 </style>

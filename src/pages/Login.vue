@@ -1141,49 +1141,6 @@ onMounted(() => {
   transform: translateX(2px);
 }
 
-/* ================= 响应式 ================= */
-@media (max-width: 1100px) {
-  .login-page {
-    grid-template-columns: 1fr;
-  }
-
-  .left-panel {
-    height: 300px; 
-    min-height: auto;
-    padding: 0;
-    overflow: hidden; /* 移动端恢复隐藏，防止撑破屏幕 */
-  }
-  
-  .video-container {
-    width: 100%; /* 移动端恢复 100% 宽度 */
-    height: 100%; 
-  }
-  
-  .right-panel {
-    background: #fff; /* 移动端恢复白底，防止字看不清 */
-  }
-
-  .video-mask {
-     background: 
-      linear-gradient(to bottom, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 25%),
-      linear-gradient(to top, #ffffff 0%, rgba(255,255,255,1) 15%, rgba(255,255,255,0) 50%);
-  }
-
-  .tagline {
-    font-size: 32px;
-    top: 40px;
-    left: 24px;
-  }
-}
-
-@media (max-width: 640px) {
-  .right-panel {
-    padding: 32px 24px;
-  }
-  .title { font-size: 24px; }
-  .subtitle { font-size: 13px; }
-}
-
 /* ===== Sign In 过渡层（全屏） ===== */
 .transition-overlay {
   position: fixed;

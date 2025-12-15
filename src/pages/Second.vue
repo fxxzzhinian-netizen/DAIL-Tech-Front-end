@@ -578,41 +578,5 @@
     transform: translateX(0);
   }
   
-  /* ========= 响应式 ========= */
-  @media (max-width: 960px) {
-    .platform {
-      padding: 56px 16px 72px;
-    }
-  
-    .platform-inner {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 32px;
-    }
-  
-    .platform-grid {
-      margin: 32px auto 0;
-      display: block;
-    }
-  
-    .platform-grid-left {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 12.8px;
-    }
-  
-    .platform-title {
-      font-size: 36px;
-    }
-  
-    .title-row {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 16px;
-    }
-  
-    .floating-learn-more {
-      margin: 0;
-    }
-  }
   </style>
   

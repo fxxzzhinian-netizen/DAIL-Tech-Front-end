@@ -721,41 +721,6 @@ async function publish() {
   color: #000000;
 }
 
-@media (max-width: 980px) {
-  .meta-bar {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .meta-options {
-    min-width: 0;
-  }
-}
-
-@media (max-width: 860px) {
-  .hero-meta {
-    font-size: 14px;
-    margin-bottom: 18px;
-  }
-  .hero-title {
-    font-size: 46px;
-    line-height: 1.05;
-    letter-spacing: -0.03em;
-  }
-  .hero-dek {
-    margin-top: 16px;
-    font-size: 16px;
-    line-height: 1.75;
-  }
-  .divider {
-    margin: 34px 0 14px;
-  }
-  .meta-bar {
-    grid-template-columns: 1fr;
-  }
-  .meta-options {
-    min-width: 0;
-  }
-}
-
 /* Bottom action bar */
 .bottom-bar {
   position: fixed;
@@ -814,24 +779,6 @@ async function publish() {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.03em;
-}
-
-@media (max-width: 860px) {
-  .bottom-bar {
-    padding: 0 18px;
-  }
-  .bottom-inner {
-    min-height: 84px;
-    padding: 12px 0;
-    align-items: flex-start;
-  }
-  .bottom-sub {
-    max-width: 560px;
-  }
-  .bottom-bar .btn {
-    height: 34px;
-    padding: 0 12px;
-  }
 }
 </style>
 

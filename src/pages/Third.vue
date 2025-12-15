@@ -571,35 +571,4 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.05);
 }
 
-/* 响应式调整 */
-@media (max-width: 960px) {
-  .cta-section {
-    padding: 60px 0;
-  }
-
-  .cta-band {
-    height: 360px;
-  }
-
-  .cta-container {
-    padding: 0 16px;
-    min-height: 360px;
-  }
-
-  .cta-headline {
-    font-size: 32px;
-  }
-
-  .cta-buttons {
-    flex-direction: column;
-    width: 100%;
-    max-width: 300px;
-  }
-
-  .btn-try,
-  .btn-talk {
-    width: 100%;
-    justify-content: center;
-  }
-}
 </style>

@@ -536,16 +536,6 @@ async function onShare() {
   transform: translate3d(0, 0, 0);
 }
 
-@media (max-width: 860px) {
-  .back-btn {
-    top: 86px;
-    height: 36px;
-  }
-  .back-btn.is-open {
-    width: 132px;
-  }
-}
-
 .loading {
   padding: 28px 0;
   color: rgba(17, 24, 39, 0.62);
@@ -674,29 +664,6 @@ async function onShare() {
   border: 1px solid rgba(17, 24, 39, 0.12);
   background: #fff;
   cursor: pointer;
-}
-
-@media (max-width: 860px) {
-  .divider {
-    margin: 34px 0 14px;
-  }
-  .hero-meta {
-    font-size: 14px;
-    margin-bottom: 18px;
-  }
-  .hero-title {
-    font-size: 46px;
-    line-height: 1.05;
-    letter-spacing: -0.03em;
-  }
-  .hero-dek {
-    margin-top: 16px;
-    font-size: 16px;
-    line-height: 1.75;
-  }
-  .actions {
-    margin-bottom: 26px;
-  }
 }
 </style>
 

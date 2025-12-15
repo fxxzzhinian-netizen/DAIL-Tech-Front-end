@@ -664,41 +664,6 @@ async function doDelete() {
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.25), 0 16px 34px rgba(15, 23, 42, 0.10);
 }
 
-@media (max-width: 1100px) {
-  .grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 860px) {
-  .news-title {
-    font-size: 52px;
-  }
-  .news-controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 520px) {
-  .news-page {
-    padding: 108px 18px 60px;
-  }
-  .menu {
-    justify-content: flex-start;
-  }
-  .link:hover,
-  .link:focus-visible,
-  .link.active {
-    width: 132px;
-  }
-  .grid {
-    grid-template-columns: 1fr;
-  }
-}
 
 /* Delete bar (fixed) */
 .delete-bar {
@@ -798,14 +763,5 @@ async function doDelete() {
   cursor: not-allowed;
 }
 
-@media (max-width: 860px) {
-  .delete-bar {
-    padding: 0 18px;
-  }
-  .delete-inner {
-    min-height: 84px;
-    align-items: flex-start;
-  }
-}
 </style>
 
