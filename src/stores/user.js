@@ -8,6 +8,7 @@ export const useUserStore = defineStore('user', () => {
   const tokenType = ref(localStorage.getItem('token_type') || sessionStorage.getItem('token_type') || 'bearer')
   const username = ref(localStorage.getItem('username') || sessionStorage.getItem('username') || '')
   const createdAt = ref(localStorage.getItem('created_at') || sessionStorage.getItem('created_at') || '')
+  const updatedAt = ref(localStorage.getItem('updated_at') || sessionStorage.getItem('updated_at') || '')
   // 用户资料（可编辑）
   const displayName = ref(localStorage.getItem('display_name') || sessionStorage.getItem('display_name') || '')
   const phone = ref(localStorage.getItem('phone') || sessionStorage.getItem('phone') || '')
@@ -212,6 +213,10 @@ export const useUserStore = defineStore('user', () => {
       createdAt.value = userData.created_at
       storage.setItem('created_at', userData.created_at)
     }
+    if (userData?.updated_at) {
+      updatedAt.value = userData.updated_at
+      storage.setItem('updated_at', userData.updated_at)
+    }
     if (userData?.display_name != null) {
       displayName.value = String(userData.display_name || '')
       storage.setItem('display_name', displayName.value)
@@ -247,6 +252,7 @@ export const useUserStore = defineStore('user', () => {
     tokenType.value = 'bearer'
     username.value = ''
     createdAt.value = ''
+    updatedAt.value = ''
     displayName.value = ''
     phone.value = ''
     email.value = ''
@@ -261,6 +267,7 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('refresh_token_expires_at')
     localStorage.removeItem('username')
     localStorage.removeItem('created_at')
+    localStorage.removeItem('updated_at')
     localStorage.removeItem('display_name')
     localStorage.removeItem('phone')
     localStorage.removeItem('email')
@@ -274,6 +281,7 @@ export const useUserStore = defineStore('user', () => {
     sessionStorage.removeItem('refresh_token_expires_at')
     sessionStorage.removeItem('username')
     sessionStorage.removeItem('created_at')
+    sessionStorage.removeItem('updated_at')
     sessionStorage.removeItem('display_name')
     sessionStorage.removeItem('phone')
     sessionStorage.removeItem('email')
@@ -333,6 +341,7 @@ export const useUserStore = defineStore('user', () => {
     tokenType.value = storage.getItem('token_type') || 'bearer'
     username.value = storage.getItem('username') || ''
     createdAt.value = storage.getItem('created_at') || ''
+    updatedAt.value = storage.getItem('updated_at') || ''
     displayName.value = storage.getItem('display_name') || ''
     phone.value = storage.getItem('phone') || ''
     email.value = storage.getItem('email') || ''
@@ -384,6 +393,10 @@ export const useUserStore = defineStore('user', () => {
       birthday.value = String(patch.birthday || '')
       storage.setItem('birthday', birthday.value)
     }
+    if (patch.updatedAt != null) {
+      updatedAt.value = String(patch.updatedAt || '')
+      storage.setItem('updated_at', updatedAt.value)
+    }
   }
 
   return {
@@ -393,6 +406,7 @@ export const useUserStore = defineStore('user', () => {
     tokenType,
     username,
     createdAt,
+    updatedAt,
     displayName,
     phone,
     email,

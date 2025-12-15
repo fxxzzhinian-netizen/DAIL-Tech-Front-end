@@ -43,13 +43,38 @@ const emit = defineEmits(['click'])
 
 const latest = ref(null)
 
+function idLastDigit(item) {
+  const raw = item?.id
+  if (raw == null) return -1
+  const s = String(raw).trim()
+  if (!s) return -1
+  const last = s.slice(-1)
+  const n = Number(last)
+  return Number.isFinite(n) ? n : -1
+}
+
 function pickLatest(list) {
   if (!Array.isArray(list) || list.length === 0) return null
-  // Prefer publishedAt if present, otherwise keep first item.
+  // Prefer "latest" by sorting on the last digit of id (desc).
+  // If ids are missing/unusable, fallback to publishedAt (desc), otherwise keep first.
+  const hasUsableId = list.some((x) => idLastDigit(x) >= 0)
+  if (hasUsableId) {
+    const sorted = [...list].sort((a, b) => {
+      const bd = idLastDigit(b)
+      const ad = idLastDigit(a)
+      if (bd !== ad) return bd - ad
+      return String(b?.publishedAt || '').localeCompare(String(a?.publishedAt || ''))
+    })
+    return sorted[0]
+  }
+
   const hasDate = list.some((x) => x?.publishedAt)
-  if (!hasDate) return list[0]
-  const sorted = [...list].sort((a, b) => String(b?.publishedAt || '').localeCompare(String(a?.publishedAt || '')))
-  return sorted[0]
+  if (hasDate) {
+    const sorted = [...list].sort((a, b) => String(b?.publishedAt || '').localeCompare(String(a?.publishedAt || '')))
+    return sorted[0]
+  }
+
+  return list[0]
 }
 
 onMounted(async () => {

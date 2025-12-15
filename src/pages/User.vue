@@ -165,6 +165,20 @@
                 </div>
               </div>
 
+              <!-- Updated At (read-only) -->
+              <div class="info-card float-in" :style="{ '--d': '325ms' }" :class="{ animate: contentAnimate }">
+                <div class="info-icon" aria-hidden="true">
+                  <svg viewBox="0 0 1024 1024" width="22" height="22" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M794.7 312.7c-15.6-58.1-49.2-110.5-95.9-149.3C646.5 119.9 580.1 96 512 96c-68.1 0-134.5 23.9-186.8 67.4-46.7 38.8-80.2 91.2-95.8 149.3-92 33.5-154.7 121.5-154.7 220.6 0 62.5 24.5 121.4 68.9 165.8C188 743.5 246.9 768 309.4 768H352v-64h-42.6c-94.1 0-170.7-76.6-170.7-170.7 0-76.8 51.9-144.5 126.1-164.7l19.1-5.2 3.8-19.5C308.8 237.3 403.1 160 512 160c108.8 0 203.2 77.4 224.3 183.9l3.9 19.4 19.1 5.2c74.2 20.2 126.1 87.9 126.1 164.7 0 94.1-76.6 170.7-170.7 170.7H549.5l77.2-77.3-45.2-45.2-109.3 109.3L427 736l45.2 45.3 118.7 118.6 45.2-45.3-86.6-86.6h165.2c62.5 0 121.4-24.5 165.8-68.9s68.9-103.3 68.9-165.8c0-99-62.7-187.1-154.7-220.6z" />
+                  </svg>
+                </div>
+
+                <div class="info-body">
+                  <div class="info-title">{{ t('user.updatedAt') }}</div>
+                  <div class="info-value">{{ updatedAtText }}</div>
+                </div>
+              </div>
+
               <!-- Birthday -->
               <button
                 class="info-card info-card--action float-in"
@@ -443,6 +457,34 @@
     const hasTz = /Z$|[+-]\d{2}:\d{2}$/.test(s)
     return new Date(hasTz ? s : `${s}Z`)
   }
+
+  function applyProfileFromApi(data) {
+    if (!data || typeof data !== 'object') return
+
+    const nextDisplayName = data.display_name ?? data.displayName
+    const nextPhone = data.phone
+    const nextEmail = data.email
+    const nextBirthday = data.birthday ?? data.birthdate ?? data.birth_day
+    const nextUsername = data.username
+    const nextCreatedAt = data.created_at ?? data.createdAt
+    const nextUpdatedAt = data.updated_at ?? data.updatedAt
+
+    const storePatch = {}
+    if (nextDisplayName !== undefined) storePatch.displayName = String(nextDisplayName || '')
+    if (nextPhone !== undefined) storePatch.phone = String(nextPhone || '')
+    if (nextEmail !== undefined) storePatch.email = String(nextEmail || '')
+    if (nextBirthday !== undefined) storePatch.birthday = String(nextBirthday || '')
+    if (nextUpdatedAt !== undefined) storePatch.updatedAt = String(nextUpdatedAt || '')
+
+    if (Object.keys(storePatch).length) {
+      userStore.setProfileFields(storePatch)
+      if (storePatch.email !== undefined) profileEmail.value = storePatch.email
+    }
+
+    if (nextUsername !== undefined) userStore.username = String(nextUsername || '')
+    if (nextCreatedAt !== undefined) userStore.createdAt = String(nextCreatedAt || '')
+    if (nextUpdatedAt !== undefined) userStore.updatedAt = String(nextUpdatedAt || '')
+  }
   
   const DAY_MS = 1000 * 60 * 60 * 24
   
@@ -451,6 +493,7 @@
   )
   const username = computed(() => userStore.username || userStore.phone || '—')
   const createdAtRaw = computed(() => userStore.createdAt || userStore.created_at || '')
+  const updatedAtRaw = computed(() => userStore.updatedAt || userStore.updated_at || '')
   
   const daysInDAIL = computed(() => {
     const created = parseApiDate(createdAtRaw.value)
@@ -463,6 +506,17 @@
     const d = parseApiDate(createdAtRaw.value)
     if (!d) return '—'
     // 统一输出为本地可读格式
+    const yyyy = d.getFullYear()
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    const hh = String(d.getHours()).padStart(2, '0')
+    const mi = String(d.getMinutes()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd} ${hh}:${mi}`
+  })
+
+  const updatedAtText = computed(() => {
+    const d = parseApiDate(updatedAtRaw.value)
+    if (!d) return '—'
     const yyyy = d.getFullYear()
     const mm = String(d.getMonth() + 1).padStart(2, '0')
     const dd = String(d.getDate()).padStart(2, '0')
@@ -613,6 +667,28 @@
     return data
   }
 
+  async function fetchMyProfile() {
+    const token = userStore.accessToken
+    if (!token) return
+
+    try {
+      const res = await fetch('/api/me/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      let data = null
+      try { data = await res.json() } catch (e) {}
+
+      if (!res.ok) {
+        throw new Error(extractApiErrorMessage(data, res.status))
+      }
+
+      applyProfileFromApi(data)
+    } catch (err) {
+      errorStore.showError(err?.message || t('common.comingSoon'))
+    }
+  }
+
   async function saveEdit() {
     if (isSavingEdit.value) return
     emailError.value = ''
@@ -640,10 +716,12 @@
       // 以接口返回为准（如果没返回字段，则回落到本次 patch 值）
       const nextEmail = Object.prototype.hasOwnProperty.call(patch, 'email') ? (resp?.email ?? patch.email) : undefined
       const nextBirthday = Object.prototype.hasOwnProperty.call(patch, 'birthday') ? (resp?.birthday ?? patch.birthday) : undefined
+      const nextUpdatedAt = resp?.updated_at ?? resp?.updatedAt
 
       const storePatch = {}
       if (nextEmail !== undefined) storePatch.email = nextEmail
       if (nextBirthday !== undefined) storePatch.birthday = nextBirthday
+      if (nextUpdatedAt !== undefined) storePatch.updatedAt = nextUpdatedAt
       userStore.setProfileFields(storePatch)
 
       if (nextEmail !== undefined) profileEmail.value = String(nextEmail || '')
@@ -684,6 +762,7 @@
       contentAnimate.value = true
     }, 80)
     canPublishNews.value = computeCanPublishNewsFromToken(userStore.accessToken)
+    fetchMyProfile()
   })
 
   watch(activeTab, async () => {
@@ -700,6 +779,8 @@
       canPublishNews.value = computeCanPublishNewsFromToken(userStore.accessToken)
       if (!userStore.accessToken) {
         if (activeTab.value === 'news') activeTab.value = 'profile'
+      } else {
+        fetchMyProfile()
       }
     }
   )
