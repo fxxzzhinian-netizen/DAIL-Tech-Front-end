@@ -70,8 +70,8 @@
           {{ t('nav.company') }} <span class="plus">+</span>
         </button>
         <div class="dropdown dropdown--company">
-          <a href="#" class="dropdown-item">{{ t('nav.companyAbout') }}</a>
-          <a href="#" class="dropdown-item">{{ t('nav.companyTeam') }}</a>
+          <a href="/about" class="dropdown-item" @click.prevent="router.push('/about')">{{ t('nav.companyAbout') }}</a>
+          <a href="/team" class="dropdown-item" @click.prevent="router.push('/team')">{{ t('nav.companyTeam') }}</a>
           <a href="#" class="dropdown-item">{{ t('nav.companyCareers') }}</a>
           <a href="/news" class="dropdown-item" @click.prevent="router.push('/news')">{{ t('nav.companyNews') }}</a>
         </div>
@@ -109,14 +109,18 @@
       <!-- Login/User 图标 -->
       <button
         class="login-icon"
+        :class="{ 'login-icon--has-photo': isLoggedIn && userPhoto }"
         :aria-label="isLoggedIn ? t('nav.userProfile') : t('nav.login')"
         type="button"
         @click="handleUserClick"
       >
         <img v-if="!isLoggedIn" src="/src/assets/images/login.png" :alt="t('nav.login')" />
-        <div v-else class="user-avatar">
-          {{ userInitial }}
-        </div>
+        <template v-else>
+          <img v-if="userPhoto" :src="userPhoto" alt="avatar" class="user-avatar-img" />
+          <div v-else class="user-avatar">
+            {{ userInitial }}
+          </div>
+        </template>
       </button>
     </div>
   </header>
@@ -148,6 +152,9 @@ const userInitial = computed(() => {
   const name = userStore.displayName || userStore.username || 'U'
   return name.charAt(0).toUpperCase()
 })
+
+// 用户头像 URL
+const userPhoto = computed(() => userStore.photo || '')
 
 const handleUserClick = () => {
   if (isLoggedIn.value) {
@@ -413,6 +420,12 @@ onBeforeUnmount(() => {
   transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
+.login-icon--has-photo {
+  padding: 0;
+  overflow: hidden;
+  border: none;
+}
+
 .login-icon:hover {
   background: #000;
   border-color: #000;
@@ -427,8 +440,19 @@ onBeforeUnmount(() => {
   transition: filter 0.2s ease;
 }
 
+.login-icon--has-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
 .login-icon:hover img {
   filter: invert(1);
+}
+
+.login-icon--has-photo:hover img {
+  filter: none;
 }
 
 .user-avatar {

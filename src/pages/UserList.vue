@@ -1,0 +1,787 @@
+<template>
+  <section class="user-list-page">
+    <div class="page-container">
+      <header class="page-header">
+        <h1 class="page-title reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '80ms' }">
+          {{ isZh ? '用户列表' : 'User Directory' }}
+        </h1>
+        <p class="page-subtitle reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '140ms' }">
+          {{ isZh ? '浏览平台所有注册用户的公开信息。' : 'Browse public profiles of all registered users.' }}
+        </p>
+      </header>
+
+      <!-- Search & Filter -->
+      <div class="search-bar reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '200ms' }">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+          <input
+            class="search-input"
+            type="text"
+            v-model="searchQuery"
+            :placeholder="isZh ? '搜索用户名或姓名...' : 'Search by username or name...'"
+            @input="handleSearch"
+          />
+        </div>
+      </div>
+
+      <!-- User List -->
+      <div class="user-grid">
+        <div v-if="isLoading" class="loading-state">
+          {{ isZh ? '加载中...' : 'Loading...' }}
+        </div>
+
+        <div v-else-if="filteredUsers.length === 0" class="empty-state">
+          {{ isZh ? '暂无用户数据' : 'No users found' }}
+        </div>
+
+        <div
+          v-else
+          v-for="(user, idx) in filteredUsers"
+          :key="user.id"
+          class="user-card reveal"
+          :class="{ 'is-in': pageEnter }"
+          :style="{ '--d': `${Math.min(800, 260 + idx * 60)}ms` }"
+          @click="viewUserProfile(user)"
+        >
+          <div class="user-avatar">
+            <img v-if="user.avatar_url" :src="user.avatar_url" :alt="user.display_name || user.username" />
+            <span v-else class="avatar-letter">{{ getAvatarLetter(user) }}</span>
+          </div>
+          <div class="user-info">
+            <div class="user-name">{{ user.display_name || user.username || '—' }}</div>
+            <div class="user-meta">
+              <span v-if="user.title" class="user-title">{{ user.title }}</span>
+              <span v-if="user.department" class="user-dept">{{ user.department }}</span>
+            </div>
+            <div class="user-joined">
+              {{ isZh ? '加入于 ' : 'Joined ' }}{{ formatDate(user.created_at) }}
+            </div>
+          </div>
+          <div class="user-arrow">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m9 18 6-6-6-6"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="pagination reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '400ms' }">
+        <button
+          class="page-btn"
+          :disabled="currentPage <= 1"
+          @click="goToPage(currentPage - 1)"
+        >
+          {{ isZh ? '上一页' : 'Prev' }}
+        </button>
+        <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
+        <button
+          class="page-btn"
+          :disabled="currentPage >= totalPages"
+          @click="goToPage(currentPage + 1)"
+        >
+          {{ isZh ? '下一页' : 'Next' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="bottom-bar">
+      <div class="bottom-inner">
+        <div class="bottom-left">
+          <div class="bottom-title">{{ isZh ? '用户目录' : 'User Directory' }}</div>
+          <div class="bottom-sub">{{ isZh ? `共 ${totalUsers} 位用户` : `${totalUsers} users total` }}</div>
+        </div>
+        <div class="bottom-right">
+          <button class="btn ghost" type="button" @click="router.push('/user')">
+            {{ isZh ? '返回' : 'Back' }}
+          </button>
+          <button class="btn ghost" type="button" :disabled="isLoading" @click="loadUsers">
+            {{ isZh ? '刷新' : 'Refresh' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div v-if="isEditOpen" class="modal-layer" @click.self="closeEditModal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">{{ isZh ? '编辑用户' : 'Edit User' }}</div>
+          <button class="modal-close" type="button" @click="closeEditModal">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6 6 18M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <label class="form-label">{{ isZh ? '用户名' : 'Username' }}</label>
+            <input class="form-input" type="text" v-model="editForm.username" />
+          </div>
+          <div class="form-row">
+            <label class="form-label">{{ isZh ? '手机号' : 'Phone' }}</label>
+            <input class="form-input" type="text" v-model="editForm.phone" />
+          </div>
+          <div class="form-row">
+            <label class="form-label">{{ isZh ? '邮箱' : 'Email' }}</label>
+            <input class="form-input" type="email" v-model="editForm.email" />
+          </div>
+          <div class="form-row">
+            <label class="form-label">{{ isZh ? '生日' : 'Birthday' }}</label>
+            <input class="form-input" type="date" v-model="editForm.birthday" />
+          </div>
+          <div class="form-row">
+            <label class="form-label">{{ isZh ? '角色' : 'Role' }}</label>
+            <select class="form-select" v-model="editForm.role">
+              <option :value="0">{{ isZh ? '游客' : 'Guest' }} (0)</option>
+              <option :value="1">{{ isZh ? '实习生' : 'Intern' }} (1)</option>
+              <option :value="2">{{ isZh ? '职员' : 'Staff' }} (2)</option>
+              <option :value="3">{{ isZh ? '管理' : 'Manager' }} (3)</option>
+              <option :value="4">{{ isZh ? '大管理' : 'Admin' }} (4)</option>
+            </select>
+          </div>
+          <div class="form-row form-row--checkbox">
+            <label class="checkbox-label">
+              <input type="checkbox" v-model="editForm.is_active" />
+              <span>{{ isZh ? '账号激活' : 'Active' }}</span>
+            </label>
+          </div>
+          <div class="form-row">
+            <label class="form-label">{{ isZh ? '重置密码（留空不修改）' : 'Reset Password (leave empty to keep)' }}</label>
+            <input class="form-input" type="password" v-model="editForm.password" :placeholder="isZh ? '输入新密码' : 'Enter new password'" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn ghost" type="button" @click="closeEditModal" :disabled="isSaving">
+            {{ isZh ? '取消' : 'Cancel' }}
+          </button>
+          <button class="btn primary" type="button" @click="saveUserEdit" :disabled="isSaving">
+            {{ isSaving ? (isZh ? '保存中...' : 'Saving...') : (isZh ? '保存' : 'Save') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useI18nStore } from '@/stores/i18n'
+import { useUserStore } from '@/stores/user'
+import { useErrorStore } from '@/stores/error'
+import { useSuccessStore } from '@/stores/success'
+import { listAllUsers, updateUserByAdmin } from '@/services/adminService'
+
+const router = useRouter()
+const i18n = useI18nStore()
+const userStore = useUserStore()
+const errorStore = useErrorStore()
+const successStore = useSuccessStore()
+
+const isZh = computed(() => i18n.locale === 'zh')
+const pageEnter = ref(false)
+
+// Check if current user has admin role (role == 4)
+const isAdmin = computed(() => {
+  try {
+    const token = userStore.accessToken
+    if (!token) return false
+    const [, payload] = String(token).split('.')
+    if (!payload) return false
+    const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+    return json?.role === 4
+  } catch {
+    return false
+  }
+})
+
+// Data
+const users = ref([])
+const isLoading = ref(false)
+const searchQuery = ref('')
+const currentPage = ref(1)
+const pageSize = 20
+const totalUsers = ref(0)
+
+// Edit modal
+const isEditOpen = ref(false)
+const editingUser = ref(null)
+const editForm = ref({})
+const isSaving = ref(false)
+
+const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize))
+
+const filteredUsers = computed(() => {
+  if (!searchQuery.value.trim()) return users.value
+  const q = searchQuery.value.toLowerCase()
+  return users.value.filter(u => {
+    const name = (u.display_name || u.username || '').toLowerCase()
+    const realName = (u.real_name || '').toLowerCase()
+    const email = (u.email || '').toLowerCase()
+    const phone = (u.phone || '').toLowerCase()
+    return name.includes(q) || realName.includes(q) || email.includes(q) || phone.includes(q)
+  })
+})
+
+function getAvatarLetter(user) {
+  const name = user.display_name || user.username || user.real_name || 'U'
+  return (name[0] || 'U').toUpperCase()
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return '—'
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function handleSearch() {
+  // Local filtering only
+}
+
+function viewUserProfile(user) {
+  if (isAdmin.value) {
+    openEditModal(user)
+  }
+}
+
+function openEditModal(user) {
+  editingUser.value = user
+  editForm.value = {
+    username: user.username || '',
+    phone: user.phone || '',
+    email: user.email || '',
+    birthday: user.birthday || '',
+    is_active: user.is_active !== false,
+    role: user.role || 1,
+    password: ''
+  }
+  isEditOpen.value = true
+}
+
+function closeEditModal() {
+  isEditOpen.value = false
+  editingUser.value = null
+  editForm.value = {}
+}
+
+async function saveUserEdit() {
+  if (!editingUser.value || isSaving.value) return
+  
+  isSaving.value = true
+  try {
+    const updates = {}
+    if (editForm.value.username?.trim()) updates.username = editForm.value.username.trim()
+    if (editForm.value.phone?.trim()) updates.phone = editForm.value.phone.trim()
+    if (editForm.value.email?.trim()) updates.email = editForm.value.email.trim()
+    if (editForm.value.birthday?.trim()) updates.birthday = editForm.value.birthday.trim()
+    updates.is_active = editForm.value.is_active
+    updates.role = editForm.value.role
+    if (editForm.value.password?.trim()) updates.password = editForm.value.password.trim()
+
+    await updateUserByAdmin(editingUser.value.id, updates)
+    successStore.showSuccess(isZh.value ? '用户信息已更新' : 'User updated')
+    closeEditModal()
+    await loadUsers()
+  } catch (e) {
+    const msg = e?.message || e
+    if (e?.status === 409) {
+      errorStore.showError(isZh.value ? '用户名或手机号已存在' : 'Username or phone already exists')
+    } else if (e?.status === 403) {
+      errorStore.showError(isZh.value ? '无权限执行此操作' : 'Permission denied')
+    } else {
+      errorStore.showError(isZh.value ? `更新失败：${msg}` : `Update failed: ${msg}`)
+    }
+  } finally {
+    isSaving.value = false
+  }
+}
+
+function goToPage(page) {
+  if (page < 1 || page > totalPages.value) return
+  currentPage.value = page
+  loadUsers()
+}
+
+async function loadUsers() {
+  if (!isAdmin.value) {
+    errorStore.showError(isZh.value ? '无权限访问此页面' : 'Permission denied')
+    return
+  }
+  
+  isLoading.value = true
+  try {
+    const offset = (currentPage.value - 1) * pageSize
+    const response = await listAllUsers({ limit: pageSize, offset })
+    // Handle different response formats
+    if (Array.isArray(response)) {
+      users.value = response
+      totalUsers.value = response.length
+    } else {
+      users.value = response.items || response.users || response.data || []
+      totalUsers.value = response.total ?? response.count ?? users.value.length
+    }
+  } catch (e) {
+    if (e?.status === 403) {
+      errorStore.showError(isZh.value ? '无权限访问用户列表' : 'Permission denied')
+    } else {
+      errorStore.showError(isZh.value ? `加载用户失败：${e?.message || e}` : `Failed to load users: ${e?.message || e}`)
+    }
+    users.value = []
+    totalUsers.value = 0
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  requestAnimationFrame(() => {
+    pageEnter.value = true
+  })
+  if (!userStore.isLoggedIn) {
+    router.push('/login')
+    return
+  }
+  loadUsers()
+})
+</script>
+
+<style scoped>
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, 22px, 0);
+  filter: blur(10px);
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1), filter 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--d, 0ms);
+  will-change: opacity, transform, filter;
+}
+.reveal.is-in { opacity: 1; transform: translate3d(0, 0, 0); filter: blur(0); }
+
+.user-list-page {
+  min-height: 100vh;
+  background: #ffffff;
+  padding: 120px 24px 148px;
+}
+
+.page-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 40px;
+}
+
+.page-title {
+  font-size: 48px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.6);
+  margin: 0;
+}
+
+/* Search */
+.search-bar {
+  margin-bottom: 32px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  max-width: 400px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.search-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 16px 0 48px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  font-size: 15px;
+  color: #000000;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-input:focus {
+  border-color: #000000;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+}
+
+.search-input::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* User Grid */
+.user-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loading-state,
+.empty-state {
+  padding: 48px 24px;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 15px;
+}
+
+/* User Card */
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.user-card:hover {
+  border-color: #000000;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.user-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-letter {
+  font-size: 22px;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+  margin-bottom: 4px;
+}
+
+.user-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.user-title,
+.user-dept {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.user-title::after {
+  content: '·';
+  margin-left: 8px;
+  color: rgba(0, 0, 0, 0.3);
+}
+
+.user-dept {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.user-joined {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.user-arrow {
+  color: rgba(0, 0, 0, 0.3);
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.user-card:hover .user-arrow {
+  color: #000000;
+  transform: translateX(4px);
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.page-btn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #ffffff;
+  color: #000000;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-btn:hover:not(:disabled) {
+  border-color: #000000;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/* Bottom bar */
+.bottom-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  background: #ffffff;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -6px 32px rgba(0, 0, 0, 0.08);
+}
+
+.bottom-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.bottom-left { min-width: 0; }
+.bottom-title { font-size: 18px; font-weight: 700; color: #000000; letter-spacing: -0.01em; }
+.bottom-sub { font-size: 14px; color: rgba(0, 0, 0, 0.7); margin-top: 4px; }
+.bottom-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+
+/* Buttons */
+.btn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 1px solid #000000;
+  background: transparent;
+  color: #000000;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .user-list-page { padding: 100px 16px 140px; }
+  .page-title { font-size: 32px; }
+  .user-card { padding: 12px 16px; }
+  .user-avatar { width: 48px; height: 48px; }
+  .avatar-letter { font-size: 18px; }
+  .user-name { font-size: 15px; }
+  .bottom-inner { flex-direction: column; gap: 12px; align-items: stretch; }
+  .bottom-left { text-align: center; }
+  .bottom-right { justify-content: center; }
+}
+
+/* Modal */
+.modal-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000000;
+}
+
+.modal-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #000000;
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.form-row {
+  margin-bottom: 16px;
+}
+
+.form-row:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.7);
+  margin-bottom: 6px;
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  font-size: 15px;
+  color: #000000;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-input:focus,
+.form-select:focus {
+  border-color: #000000;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+}
+
+.form-row--checkbox {
+  margin-top: 8px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #000000;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #000000;
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.btn.primary {
+  background: #000000;
+  border-color: #000000;
+  color: #ffffff;
+}
+
+.btn.primary:hover:not(:disabled) {
+  background: #1a1a1a;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+</style>

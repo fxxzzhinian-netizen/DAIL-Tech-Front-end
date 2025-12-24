@@ -242,10 +242,10 @@ function computeCanManageFromToken(token) {
     const [, payload] = String(token || '').split('.')
     if (!payload) return false
     const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
-    const roles = Array.isArray(json?.roles) ? json.roles : []
     const role = json?.role
-    if (roles.includes(3) || role === 3) return true
-    if (!('roles' in json) && !('role' in json)) return true
+    // role >= 3 can publish/delete news
+    if (typeof role === 'number' && role >= 3) return true
+    if (!('role' in json)) return true
     return false
   } catch {
     return !!token
@@ -673,21 +673,20 @@ async function doDelete() {
   bottom: 0;
   z-index: 20;
   background: #ffffff;
-  backdrop-filter: none;
-  border-top: none;
-  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.06); /* match NavBar boundary */
-  padding: 0 30px; /* wider bar */
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -6px 32px rgba(0, 0, 0, 0.08);
+  padding: 0 30px;
 }
 
 .delete-inner {
   max-width: 1400px;
   margin: 0 auto;
   min-height: 72px;
-  padding: 12px 0;
+  padding: 20px 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 24px;
 }
 
 .delete-left {
@@ -695,14 +694,15 @@ async function doDelete() {
 }
 
 .delete-title {
-  color: rgba(15, 23, 42, 0.82);
-  font-size: 13px;
+  color: #000000;
+  font-size: 18px;
   font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .delete-title__name {
-  font-weight: 900;
-  color: rgba(15, 23, 42, 0.92);
+  font-weight: 700;
+  color: #000000;
 }
 
 .delete-confirm {
@@ -720,42 +720,60 @@ async function doDelete() {
 }
 
 .delete-confirm-text {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
-  color: rgba(15, 23, 42, 0.72);
+  color: rgba(0, 0, 0, 0.7);
 }
 
 .delete-hint {
   margin-top: 6px;
-  font-size: 12px;
-  color: rgba(15, 23, 42, 0.55);
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .delete-right {
   display: inline-flex;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
 
 .btn {
-  height: 34px;
-  padding: 0 12px;
+  height: 36px;
+  padding: 0 16px;
   border-radius: 999px;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   cursor: pointer;
-  border: 1px solid rgba(15, 23, 42, 0.14);
+  border: 1px solid #000000;
   background: transparent;
-  color: rgba(15, 23, 42, 0.86);
+  color: #000000;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0);
+}
+
+.btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+  box-shadow: none;
 }
 
 .btn.danger {
   background: #000000;
   border-color: #000000;
   color: #ffffff;
+}
+
+.btn.danger:hover:not(:disabled) {
+  background: #1a1a1a;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .btn:disabled {

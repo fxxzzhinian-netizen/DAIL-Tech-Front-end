@@ -14,6 +14,7 @@ export const useUserStore = defineStore('user', () => {
   const phone = ref(localStorage.getItem('phone') || sessionStorage.getItem('phone') || '')
   const email = ref(localStorage.getItem('email') || sessionStorage.getItem('email') || '')
   const birthday = ref(localStorage.getItem('birthday') || sessionStorage.getItem('birthday') || '')
+  const photo = ref(localStorage.getItem('photo') || sessionStorage.getItem('photo') || '')
   const rememberMe = ref(localStorage.getItem('remember_me') === 'true')
   
   // Token 过期时间（时间戳）
@@ -163,6 +164,7 @@ export const useUserStore = defineStore('user', () => {
       oldStorage.removeItem('phone')
       oldStorage.removeItem('email')
       oldStorage.removeItem('birthday')
+      oldStorage.removeItem('photo')
     }
 
     // 保存 token 数据
@@ -233,6 +235,10 @@ export const useUserStore = defineStore('user', () => {
       birthday.value = String(userData.birthday || '')
       storage.setItem('birthday', birthday.value)
     }
+    if (userData?.photo != null) {
+      photo.value = String(userData.photo || '')
+      storage.setItem('photo', photo.value)
+    }
 
     rememberMe.value = remember
     if (remember) {
@@ -257,6 +263,7 @@ export const useUserStore = defineStore('user', () => {
     phone.value = ''
     email.value = ''
     birthday.value = ''
+    photo.value = ''
     accessTokenExpiresAt.value = 0
     refreshTokenExpiresAt.value = 0
     
@@ -272,6 +279,7 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('phone')
     localStorage.removeItem('email')
     localStorage.removeItem('birthday')
+    localStorage.removeItem('photo')
     localStorage.removeItem('remember_me')
     
     sessionStorage.removeItem('access_token')
@@ -286,6 +294,7 @@ export const useUserStore = defineStore('user', () => {
     sessionStorage.removeItem('phone')
     sessionStorage.removeItem('email')
     sessionStorage.removeItem('birthday')
+    sessionStorage.removeItem('photo')
   }
 
   // 更新 token（用于刷新 token）
@@ -346,6 +355,7 @@ export const useUserStore = defineStore('user', () => {
     phone.value = storage.getItem('phone') || ''
     email.value = storage.getItem('email') || ''
     birthday.value = storage.getItem('birthday') || ''
+    photo.value = storage.getItem('photo') || ''
     accessTokenExpiresAt.value = parseInt(storage.getItem('access_token_expires_at') || '0')
     refreshTokenExpiresAt.value = parseInt(storage.getItem('refresh_token_expires_at') || '0')
     
@@ -393,6 +403,10 @@ export const useUserStore = defineStore('user', () => {
       birthday.value = String(patch.birthday || '')
       storage.setItem('birthday', birthday.value)
     }
+    if (patch.photo != null) {
+      photo.value = String(patch.photo || '')
+      storage.setItem('photo', photo.value)
+    }
     if (patch.updatedAt != null) {
       updatedAt.value = String(patch.updatedAt || '')
       storage.setItem('updated_at', updatedAt.value)
@@ -411,6 +425,7 @@ export const useUserStore = defineStore('user', () => {
     phone,
     email,
     birthday,
+    photo,
     rememberMe,
     accessTokenExpiresAt,
     refreshTokenExpiresAt,

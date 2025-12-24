@@ -1,5 +1,7 @@
 <template>
   <section class="detail-page">
+
+    
     <div class="detail-container">
       <button
         class="back-btn"
@@ -56,6 +58,11 @@
           <p v-if="dekText" class="hero-dek reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '220ms' }">
             {{ dekText }}
           </p>
+
+          <!-- 封面图 -->
+          <div v-if="coverImageUrl" class="hero-cover reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '280ms' }">
+            <img :src="coverImageUrl" :alt="article.title" class="hero-cover__img" />
+          </div>
         </header>
 
         <div class="divider reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '300ms' }" aria-hidden="true"></div>
@@ -90,15 +97,27 @@
         </div>
 
         <div class="content">
-          <p
-            v-for="(p, idx) in bodyParagraphs"
-            :key="idx"
-            class="para reveal"
-            :class="{ 'is-in': pageEnter }"
-            :style="{ '--d': `${Math.min(900, 420 + idx * 70)}ms` }"
-          >
-            {{ p }}
-          </p>
+          <template v-for="(item, idx) in contentItems" :key="idx">
+            <!-- 文字段落 -->
+            <p
+              v-if="item.type === 'text'"
+              class="para reveal"
+              :class="{ 'is-in': pageEnter }"
+              :style="{ '--d': `${Math.min(900, 420 + idx * 70)}ms` }"
+            >
+              {{ item.content }}
+            </p>
+            <!-- 图片 -->
+            <figure
+              v-else-if="item.type === 'image'"
+              class="content-figure reveal"
+              :class="{ 'is-in': pageEnter }"
+              :style="{ '--d': `${Math.min(900, 420 + idx * 70)}ms` }"
+            >
+              <img :src="item.url" :alt="item.caption || 'Article image'" class="content-img" />
+              <figcaption v-if="item.caption" class="content-caption">{{ item.caption }}</figcaption>
+            </figure>
+          </template>
         </div>
       </div>
 
@@ -113,6 +132,10 @@
       </div>
     </div>
   </section>
+  
+  <!-- 添加Third和End组件 -->
+  <Third />
+  <End />
 </template>
 
 <script setup>
@@ -121,6 +144,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18nStore } from '@/stores/i18n'
 import { formatDateLong, getNewsBySlug } from '@/services/newsService'
 import { useErrorStore } from '@/stores/error'
+import Third from '@/page_components/Third.vue'
+import End from '@/page_components/End.vue'
+
 
 const route = useRoute()
 const router = useRouter()
@@ -334,6 +360,101 @@ const bodyParagraphs = computed(() => {
   return a.content
 })
 
+// 封面图URL
+const coverImageUrl = computed(() => {
+  const a = article.value
+  if (!a) return null
+  // 支持多种字段名
+  return a.cover_image || a.coverImage || a.cover || null
+})
+
+// 内容图片数组
+const articleImages = computed(() => {
+  const a = article.value
+  if (!a) return []
+  // 支持多种字段名
+  const images = a.images || a.contentImages || a.content_images || []
+  if (!Array.isArray(images)) return []
+  return images
+})
+
+// 将段落和图片合并为统一的内容项数组
+const contentItems = computed(() => {
+  const paragraphs = bodyParagraphs.value
+  const images = articleImages.value
+  const items = []
+
+  // 创建图片位置映射
+  const imageByPosition = {}
+  images.forEach((img) => {
+    const pos = img.position ?? img.index ?? -1
+    if (pos >= 0) {
+      imageByPosition[pos] = img
+    }
+  })
+
+  // 遍历段落，检查是否有 [IMAGE:n] 标记或按位置插入图片
+  paragraphs.forEach((p, idx) => {
+    const text = String(p || '').trim()
+    
+    // 检查是否是图片标记 [IMAGE:n]
+    const imageTagMatch = text.match(/^\[IMAGE:(\d+)\]$/)
+    if (imageTagMatch) {
+      const imgIndex = parseInt(imageTagMatch[1], 10)
+      const img = images[imgIndex]
+      if (img) {
+        items.push({
+          type: 'image',
+          url: img.url,
+          caption: img.caption || '',
+        })
+      }
+      return
+    }
+
+    // 普通文字段落
+    if (text) {
+      items.push({
+        type: 'text',
+        content: text,
+      })
+    }
+
+    // 检查是否有图片应该插入在这个段落后面
+    if (imageByPosition[idx]) {
+      const img = imageByPosition[idx]
+      items.push({
+        type: 'image',
+        url: img.url,
+        caption: img.caption || '',
+      })
+    }
+  })
+
+  // 如果没有使用位置标记，且有图片，将剩余图片添加到末尾
+  const usedPositions = new Set(Object.keys(imageByPosition).map(Number))
+  const hasPositionedImages = usedPositions.size > 0
+  
+  if (!hasPositionedImages && images.length > 0) {
+    // 检查是否已经通过 [IMAGE:n] 标记添加了图片
+    const addedImageUrls = new Set(
+      items.filter((i) => i.type === 'image').map((i) => i.url)
+    )
+    
+    images.forEach((img) => {
+      if (!addedImageUrls.has(img.url)) {
+        items.push({
+          type: 'image',
+          url: img.url,
+          caption: img.caption || '',
+        })
+      }
+    })
+  }
+
+  return items
+})
+
 const shareLabel = ref('Share')
 const shareAria = computed(() =>
   shareLabel.value === 'Copied' ? 'Link copied' : 'Share this article'
@@ -411,6 +532,8 @@ async function onShare() {
   padding: 120px 24px 80px;
 }
 
+
+
 .detail-container {
   max-width: 1100px;
   margin: 0 auto;
@@ -420,7 +543,7 @@ async function onShare() {
   position: fixed;
   top: 96px; /* below fixed NavBar */
   left: 0;
-  z-index: 20;
+  z-index: 30;
   height: 38px;
   width: 44px;
   padding: 0 12px;
@@ -664,6 +787,45 @@ async function onShare() {
   border: 1px solid rgba(17, 24, 39, 0.12);
   background: #fff;
   cursor: pointer;
+}
+
+/* 封面图样式 */
+.hero-cover {
+  margin: 36px auto 0;
+  max-width: 960px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.hero-cover__img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  max-height: 540px;
+}
+
+/* 内容图片样式 */
+.content-figure {
+  margin: 28px 0;
+  padding: 0;
+}
+
+.content-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+  background: #f0f0f0;
+}
+
+.content-caption {
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(17, 24, 39, 0.55);
+  text-align: center;
 }
 </style>
 

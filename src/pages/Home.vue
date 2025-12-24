@@ -8,10 +8,10 @@
 </template>
 
 <script setup>
-import Main from './Main.vue'
-import Second from './Second.vue'
-import Third from './Third.vue'
-import End from './End.vue'
+import Main from '@/page_components/Main.vue'
+import Second from '@/page_components/Second.vue'
+import Third from '@/page_components/Third.vue'
+import End from '@/page_components/End.vue'
 </script>
 
 <style scoped>

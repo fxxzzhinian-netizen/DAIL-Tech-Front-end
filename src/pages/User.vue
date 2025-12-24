@@ -5,6 +5,12 @@
         <video class="bg-video" autoplay loop muted playsinline :src="bgVideo"></video>
         <div class="bg-mask"></div>
       </div>
+
+      <!-- 右侧背景视频 -->
+      <div class="bg-layer-right" aria-hidden="true">
+        <video class="bg-video-right" autoplay loop muted playsinline :src="bgVideoRight"></video>
+        <div class="bg-mask-right"></div>
+      </div>
   
       <!-- 主体布局：左侧分选栏 + 右侧内容 -->
       <div class="layout">
@@ -81,7 +87,7 @@
                   <div class="stepper-circle" aria-hidden="true">3</div>
                   <div class="stepper-content">
                     <div class="stepper-title">{{ t('user.stepDominate') }}</div>
-                    <div class="stepper-sub">{{ t('user.reserved') }}</div>
+                    <div class="stepper-sub">{{ t('user.navDominateDesc') }}</div>
                   </div>
               </div>
               </div>
@@ -115,7 +121,15 @@
           <section v-if="activeTab === 'profile'" class="panel">
             <div class="profile-cards">
               <!-- Profile photo -->
-              <div class="info-card float-in" :style="{ '--d': '220ms' }" :class="{ animate: contentAnimate }">
+              <label class="info-card info-card--action float-in" :style="{ '--d': '220ms' }" :class="{ animate: contentAnimate, uploading: isUploadingPhoto }">
+                <input
+                  ref="photoInputRef"
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  class="sr-only"
+                  :disabled="isUploadingPhoto"
+                  @change="handlePhotoUpload"
+                />
                 <div class="info-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2-2h6l2 2h4a2 2 0 0 1 2 2z"/>
@@ -125,14 +139,31 @@
 
                 <div class="info-body">
                   <div class="info-title">{{ t('user.profilePhoto') }}</div>
-                  <div class="info-sub">{{ t('user.profilePhotoDesc') }}</div>
+                  <div class="info-sub">{{ isUploadingPhoto ? (i18n.locale === 'zh' ? '上传中...' : 'Uploading...') : t('user.profilePhotoDesc') }}</div>
                 </div>
   
-                <div class="avatar" :aria-label="t('user.avatarAria')">{{ avatarLetter }}</div>
+                <div class="avatar" :class="{ 'avatar--has-image': !!userPhotoUrl }" :aria-label="t('user.avatarAria')">
+                  <img v-if="userPhotoUrl" :src="userPhotoUrl" alt="avatar" />
+                  <span v-else>{{ avatarLetter }}</span>
+                  <div class="avatar-overlay">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="17 8 12 3 7 8"></polyline>
+                      <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                  </div>
                 </div>
+              </label>
   
               <!-- Name -->
-              <div class="info-card float-in" :style="{ '--d': '280ms' }" :class="{ animate: contentAnimate }">
+              <button
+                class="info-card info-card--action float-in"
+                :style="{ '--d': '280ms' }"
+                :class="{ animate: contentAnimate }"
+                type="button"
+                @click="openEdit('username')"
+                :aria-label="t('user.editNameAria')"
+              >
                 <div class="info-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M22 12v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>
@@ -147,7 +178,16 @@
                   <div class="info-title">{{ t('user.name') }}</div>
                   <div class="info-value">{{ profileName }}</div>
                 </div>
-                  </div>
+
+                <div class="info-action" aria-hidden="true">
+                  <span class="info-action-badge" :title="t('user.edit')">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 3 21l.5-4.5L17 3z"></path>
+                      <path d="m15 5 4 4"></path>
+                    </svg>
+                  </span>
+                </div>
+              </button>
 
               <!-- Created At (read-only) -->
               <div class="info-card float-in" :style="{ '--d': '310ms' }" :class="{ animate: contentAnimate }">
@@ -261,16 +301,79 @@
   
           <!-- Dominate -->
           <section v-else-if="activeTab === 'dominate'" class="panel">
-            <div class="panel-inner">
-              <div class="placeholder">
-                <div class="placeholder-title float-in" :style="{ '--d': '200ms' }" :class="{ animate: contentAnimate }">{{ t('user.dominateComingSoonTitle') }}</div>
-                <div class="placeholder-text float-in" :style="{ '--d': '260ms' }" :class="{ animate: contentAnimate }">
-                  {{ t('user.dominateComingSoonText') }}
+            <div class="profile-cards">
+              <!-- Upload Resume (placeholder card) -->
+              <button
+                class="info-card info-card--action float-in"
+                :style="{ '--d': '220ms' }"
+                :class="{ animate: contentAnimate }"
+                type="button"
+                @click="router.push({ name: 'resume-settings' })"
+              >
+                <div class="info-icon" aria-hidden="true">
+                  <!-- upload-cloud -->
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 17.5a4.5 4.5 0 0 0-3-8.4A6 6 0 0 0 5 10.5a4 4 0 0 0 1 7.8" />
+                    <path d="M12 12v9" />
+                    <path d="M8.5 15.5 12 12l3.5 3.5" />
+                  </svg>
                 </div>
-                <div class="placeholder-hint float-in" :style="{ '--d': '320ms' }" :class="{ animate: contentAnimate }">
-                  {{ t('user.dominateComingSoonHint') }}
+
+                <div class="info-body">
+                  <div class="info-title">{{ resumeCardTitle }}</div>
+                  <div class="info-sub">{{ resumeCardSub }}</div>
                 </div>
-              </div>
+
+                <div class="info-action" aria-hidden="true">
+                  <span class="info-action-badge" :title="i18n.locale === 'zh' ? '进入' : 'Open'">
+                    <!-- arrow-right -->
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M5 12h14"></path>
+                      <path d="m13 5 7 7-7 7"></path>
+                    </svg>
+                  </span>
+                </div>
+              </button>
+
+              <!-- Browse All Users -->
+              <button
+                class="info-card info-card--action float-in"
+                :style="{ '--d': '280ms' }"
+                :class="{ animate: contentAnimate, 'info-card--disabled': !isAdmin }"
+                type="button"
+                :disabled="!isAdmin"
+                :title="!isAdmin ? (i18n.locale === 'zh' ? '仅管理员可访问' : 'Admin only') : ''"
+                @click="isAdmin && router.push({ name: 'user-list' })"
+              >
+                <div class="info-icon" aria-hidden="true">
+                  <!-- users -->
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                </div>
+
+                <div class="info-body">
+                  <div class="info-title">{{ i18n.locale === 'zh' ? '查询所有用户' : 'Browse All Users' }}</div>
+                  <div class="info-sub">{{ !isAdmin ? (i18n.locale === 'zh' ? '仅管理员可访问此功能' : 'Admin access required') : (i18n.locale === 'zh' ? '查看平台所有注册用户的公开信息与简历。' : 'View public profiles and resumes of all registered users.') }}</div>
+                </div>
+
+                <div class="info-action" aria-hidden="true">
+                  <span class="info-action-badge" :title="i18n.locale === 'zh' ? '进入' : 'Open'">
+                    <!-- arrow-right or lock -->
+                    <svg v-if="isAdmin" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M5 12h14"></path>
+                      <path d="m13 5 7 7-7 7"></path>
+                    </svg>
+                    <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                  </span>
+                </div>
+              </button>
             </div>
           </section>
 
@@ -335,7 +438,39 @@
         </main>
       </div>
 
-      <!-- Edit Modal (Birthday / Email) -->
+      <!-- Logout Confirmation Modal -->
+      <div v-if="isLogoutModalOpen" class="modal-layer" role="dialog" aria-modal="true" aria-label="Logout confirmation" @keydown.esc.prevent="closeLogoutModal">
+        <div class="modal-backdrop" @click="closeLogoutModal" aria-hidden="true"></div>
+        <div class="modal modal--logout" @click.stop>
+          <div class="modal-header">
+            <div class="modal-title">{{ i18n.locale === 'zh' ? '确认退出' : 'Confirm Logout' }}</div>
+            <button type="button" class="modal-close" @click="closeLogoutModal" :aria-label="t('user.closeDialogAria')">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18" />
+                <path d="M6 6 18 18" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div class="logout-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </div>
+            <p class="logout-text">{{ i18n.locale === 'zh' ? '确定要退出登录吗？' : 'Are you sure you want to log out?' }}</p>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="modal-btn ghost" @click="closeLogoutModal">{{ t('user.cancel') }}</button>
+            <button type="button" class="modal-btn primary" @click="confirmLogout">{{ t('user.logout') }}</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Modal (Birthday / Email / Username) -->
       <div v-if="isEditOpen" class="modal-layer" role="dialog" aria-modal="true" :aria-label="editModalTitle" @keydown.esc.prevent="closeEdit">
         <div class="modal-backdrop" @click="closeEdit" aria-hidden="true"></div>
         <div class="modal" @click.stop>
@@ -368,18 +503,29 @@
             </div>
 
             <input
+              v-else-if="editKey === 'username'"
+              :id="editInputId"
+              class="modal-input"
+              type="text"
+              v-model="draftValue"
+              :placeholder="i18n.locale === 'zh' ? '请输入新用户名' : 'Enter new username'"
+              :aria-invalid="editError ? 'true' : 'false'"
+              autocomplete="username"
+            />
+
+            <input
               v-else
               :id="editInputId"
               class="modal-input"
               type="email"
               v-model="draftValue"
               :placeholder="t('user.emailPlaceholder')"
-              :aria-invalid="emailError ? 'true' : 'false'"
+              :aria-invalid="editError ? 'true' : 'false'"
               autocomplete="email"
               inputmode="email"
             />
 
-            <div v-if="emailError" class="modal-error" role="alert">{{ emailError }}</div>
+            <div v-if="editError" class="modal-error" role="alert">{{ editError }}</div>
           </div>
 
           <div class="modal-actions">
@@ -399,6 +545,7 @@
   import { useSuccessStore } from '@/stores/success'
   import { useI18nStore } from '@/stores/i18n'
   import bgVideo from '@/assets/images/section4.webm'
+  import bgVideoRight from '@/assets/images/about.mp4'
   
   const router = useRouter()
   const userStore = useUserStore()
@@ -423,7 +570,18 @@
     return t('user.subtitleNews')
   })
 
+  const resumeCardTitle = computed(() =>
+    i18n.locale === 'zh' ? '履历 / 资料与头像管理' : 'Resume & Images'
+  )
+
+  const resumeCardSub = computed(() =>
+    i18n.locale === 'zh'
+      ? '填写履历、设置公开状态，并管理头像/证书/项目/作品集/bio 图片。'
+      : 'Edit resume, toggle public visibility, and manage avatar/certificate/project/portfolio/bio images.'
+  )
+
   const canPublishNews = ref(false)
+  const isAdmin = ref(false)
 
   function todayYmd() {
     const d = new Date()
@@ -440,15 +598,26 @@
       const [, payload] = String(token || '').split('.')
       if (!payload) return false
       const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
-      const roles = Array.isArray(json?.roles) ? json.roles : []
       const role = json?.role
-      // Common convention: admin/editor role is 3 (as in your example token)
-      if (roles.includes(3) || role === 3) return true
+      // role >= 3 can publish/delete news
+      if (typeof role === 'number' && role >= 3) return true
       // If token exists but no role claims, allow and let backend decide
-      if (!('roles' in json) && !('role' in json)) return true
+      if (!('role' in json)) return true
       return false
     } catch {
       return !!token
+    }
+  }
+
+  function computeIsAdminFromToken(token) {
+    // Check if user has admin role (role === 4)
+    try {
+      const [, payload] = String(token || '').split('.')
+      if (!payload) return false
+      const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+      return json?.role === 4
+    } catch {
+      return false
     }
   }
 
@@ -468,6 +637,7 @@
     const nextUsername = data.username
     const nextCreatedAt = data.created_at ?? data.createdAt
     const nextUpdatedAt = data.updated_at ?? data.updatedAt
+    const nextPhoto = data.photo ?? data.photo_url ?? data.avatar ?? data.avatar_url
 
     const storePatch = {}
     if (nextDisplayName !== undefined) storePatch.displayName = String(nextDisplayName || '')
@@ -475,10 +645,12 @@
     if (nextEmail !== undefined) storePatch.email = String(nextEmail || '')
     if (nextBirthday !== undefined) storePatch.birthday = String(nextBirthday || '')
     if (nextUpdatedAt !== undefined) storePatch.updatedAt = String(nextUpdatedAt || '')
+    if (nextPhoto !== undefined) storePatch.photo = String(nextPhoto || '')
 
     if (Object.keys(storePatch).length) {
       userStore.setProfileFields(storePatch)
       if (storePatch.email !== undefined) profileEmail.value = storePatch.email
+      if (storePatch.photo !== undefined) userPhotoUrl.value = storePatch.photo
     }
 
     if (nextUsername !== undefined) userStore.username = String(nextUsername || '')
@@ -536,7 +708,7 @@
   const birthdayText = computed(() => birthdayRaw.value || t('common.notSet'))
   
   /** Profile 表单（先做本地 + store patch，后续你接 API 再替换） */
-  const profileName = ref(displayName.value)
+  const profileName = computed(() => userStore.displayName || userStore.username || t('common.guest'))
   const profilePhone = ref(userStore.phone || '')
   const profileEmail = ref(userStore.email || '')
 
@@ -546,21 +718,41 @@
   })
 
   const isEditOpen = ref(false)
-  const editKey = ref('email') // 'email' | 'birthday'
+  const editKey = ref('email') // 'email' | 'birthday' | 'username'
   const draftValue = ref('')
-  const emailError = ref('')
+  const editError = ref('')
   const draftBirthYear = ref('')
   const draftBirthMonth = ref('')
   const draftBirthDay = ref('')
   const isSavingEdit = ref(false)
 
+  // Photo upload
+  const photoInputRef = ref(null)
+  const isUploadingPhoto = ref(false)
+  const userPhotoUrl = ref('')
+
+  // 监听 store 中 photo 的变化，确保刷新后能正确显示
+  watch(
+    () => userStore.photo,
+    (newVal) => {
+      if (newVal) {
+        userPhotoUrl.value = newVal
+      }
+    },
+    { immediate: true }
+  )
+
   const editInputId = computed(() => `edit-${editKey.value}`)
-  const editModalTitle = computed(() =>
-    editKey.value === 'birthday' ? t('user.editBirthdayTitle') : t('user.editEmailTitle')
-  )
-  const editFieldLabel = computed(() =>
-    editKey.value === 'birthday' ? t('user.birthday') : t('user.email')
-  )
+  const editModalTitle = computed(() => {
+    if (editKey.value === 'birthday') return t('user.editBirthdayTitle')
+    if (editKey.value === 'username') return i18n.locale === 'zh' ? '修改用户名' : 'Edit Username'
+    return t('user.editEmailTitle')
+  })
+  const editFieldLabel = computed(() => {
+    if (editKey.value === 'birthday') return t('user.birthday')
+    if (editKey.value === 'username') return t('user.name')
+    return t('user.email')
+  })
 
   const currentYear = computed(() => new Date().getFullYear())
   const birthYearOptions = computed(() => {
@@ -593,9 +785,9 @@
   }
 
   function openEdit(key) {
-    editKey.value = key === 'birthday' ? 'birthday' : 'email'
-    emailError.value = ''
-    if (editKey.value === 'birthday') {
+    editKey.value = key
+    editError.value = ''
+    if (key === 'birthday') {
       const ymd = normalizeYmd(birthdayRaw.value)
       if (ymd) {
         const [y, m, d] = ymd.split('-')
@@ -607,6 +799,8 @@
         draftBirthMonth.value = ''
         draftBirthDay.value = ''
       }
+    } else if (key === 'username') {
+      draftValue.value = (userStore.username || '').trim()
     } else {
       draftValue.value = (profileEmail.value || userStore.email || '').trim()
     }
@@ -615,7 +809,7 @@
 
   function closeEdit() {
     isEditOpen.value = false
-    emailError.value = ''
+    editError.value = ''
   }
 
   function isValidEmail(v) {
@@ -667,6 +861,72 @@
     return data
   }
 
+  async function uploadMyPhoto(file) {
+    const token = userStore.accessToken
+    if (!token) {
+      throw new Error(t('auth.errLoginFailed'))
+    }
+
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('filename', file.name || 'avatar')
+
+    const res = await fetch('/api/me/photo', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    })
+
+    let data = null
+    try { data = await res.json() } catch (e) {}
+
+    if (!res.ok) {
+      throw new Error(extractApiErrorMessage(data, res.status))
+    }
+    return data
+  }
+
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+  const MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10MB
+
+  async function handlePhotoUpload(event) {
+    const file = event?.target?.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      errorStore.showError(i18n.locale === 'zh' ? '仅支持 JPG、PNG、GIF、WebP 格式' : 'Only JPG/PNG/GIF/WebP are supported')
+      if (photoInputRef.value) photoInputRef.value.value = ''
+      return
+    }
+
+    // Validate file size
+    if (file.size > MAX_IMAGE_SIZE) {
+      errorStore.showError(i18n.locale === 'zh' ? '图片大小不能超过 10MB' : 'Image must be <= 10MB')
+      if (photoInputRef.value) photoInputRef.value.value = ''
+      return
+    }
+
+    isUploadingPhoto.value = true
+    try {
+      const result = await uploadMyPhoto(file)
+      // Update local photo URL
+      const photoUrl = result.photo || result.photo_url || result.url || ''
+      if (photoUrl) {
+        userPhotoUrl.value = photoUrl
+        userStore.setProfileFields({ photo: photoUrl })
+      }
+      successStore.showSuccess(i18n.locale === 'zh' ? '头像上传成功' : 'Photo uploaded')
+    } catch (e) {
+      errorStore.showError(i18n.locale === 'zh' ? `头像上传失败：${e?.message || e}` : `Photo upload failed: ${e?.message || e}`)
+    } finally {
+      isUploadingPhoto.value = false
+      if (photoInputRef.value) photoInputRef.value.value = ''
+    }
+  }
+
   async function fetchMyProfile() {
     const token = userStore.accessToken
     if (!token) return
@@ -691,16 +951,27 @@
 
   async function saveEdit() {
     if (isSavingEdit.value) return
-    emailError.value = ''
+    editError.value = ''
 
     const patch = {}
     if (editKey.value === 'email') {
       const next = String(draftValue.value || '').trim()
       if (!isValidEmail(next)) {
-        emailError.value = t('user.invalidEmail')
+        editError.value = t('user.invalidEmail')
         return
       }
       patch.email = next
+    } else if (editKey.value === 'username') {
+      const next = String(draftValue.value || '').trim()
+      if (!next) {
+        editError.value = i18n.locale === 'zh' ? '用户名不能为空' : 'Username cannot be empty'
+        return
+      }
+      if (next.length < 2) {
+        editError.value = i18n.locale === 'zh' ? '用户名至少需要2个字符' : 'Username must be at least 2 characters'
+        return
+      }
+      patch.username = next
     } else {
       const y = parseInt(draftBirthYear.value || '0', 10)
       const m = parseInt(draftBirthMonth.value || '0', 10)
@@ -716,6 +987,7 @@
       // 以接口返回为准（如果没返回字段，则回落到本次 patch 值）
       const nextEmail = Object.prototype.hasOwnProperty.call(patch, 'email') ? (resp?.email ?? patch.email) : undefined
       const nextBirthday = Object.prototype.hasOwnProperty.call(patch, 'birthday') ? (resp?.birthday ?? patch.birthday) : undefined
+      const nextUsername = Object.prototype.hasOwnProperty.call(patch, 'username') ? (resp?.username ?? patch.username) : undefined
       const nextUpdatedAt = resp?.updated_at ?? resp?.updatedAt
 
       const storePatch = {}
@@ -725,18 +997,28 @@
       userStore.setProfileFields(storePatch)
 
       if (nextEmail !== undefined) profileEmail.value = String(nextEmail || '')
+      if (nextUsername !== undefined) {
+        userStore.username = String(nextUsername || '')
+        // 同步到 storage
+        const storage = userStore.getStorage()
+        storage.setItem('username', userStore.username)
+      }
 
       closeEdit()
       successStore.showSuccess(t('common.saved'))
     } catch (err) {
-      errorStore.showError(err?.message || t('common.comingSoon'))
+      const msg = err?.message || ''
+      if (msg.includes('already taken') || msg.includes('已被占用')) {
+        editError.value = i18n.locale === 'zh' ? '该用户名已被占用' : 'Username already taken'
+      } else {
+        errorStore.showError(msg || t('common.comingSoon'))
+      }
     } finally {
       isSavingEdit.value = false
     }
   }
   
   function handleResetProfile() {
-    profileName.value = displayName.value
     profilePhone.value = userStore.phone || ''
     profileEmail.value = userStore.email || ''
   }
@@ -744,15 +1026,26 @@
   function handleSaveProfile() {
     // Pinia：允许直接 patch（即便后续你 store 扩展字段也不冲突）
     userStore.$patch({
-      displayName: profileName.value?.trim() || t('common.guest'),
       phone: profilePhone.value?.trim() || '',
       email: profileEmail.value?.trim() || '',
     })
     successStore.showSuccess(t('common.saved'))
   }
   
+  // Logout confirmation modal
+  const isLogoutModalOpen = ref(false)
+
   function handleLogout() {
-      userStore.logout()
+    isLogoutModalOpen.value = true
+  }
+
+  function closeLogoutModal() {
+    isLogoutModalOpen.value = false
+  }
+
+  function confirmLogout() {
+    isLogoutModalOpen.value = false
+    userStore.logout()
     router.push('/login')
   }
   
@@ -762,6 +1055,7 @@
       contentAnimate.value = true
     }, 80)
     canPublishNews.value = computeCanPublishNewsFromToken(userStore.accessToken)
+    isAdmin.value = computeIsAdminFromToken(userStore.accessToken)
     fetchMyProfile()
   })
 
@@ -777,6 +1071,7 @@
     () => userStore.accessToken,
     () => {
       canPublishNews.value = computeCanPublishNewsFromToken(userStore.accessToken)
+      isAdmin.value = computeIsAdminFromToken(userStore.accessToken)
       if (!userStore.accessToken) {
         if (activeTab.value === 'news') activeTab.value = 'profile'
       } else {
@@ -833,6 +1128,47 @@
       rgba(255,255,255,0.55) 0%,
       rgba(255,255,255,0) 60%
     );
+  }
+
+  /* 右侧背景视频 */
+  .bg-layer-right {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 24vw;
+    height: 100%;
+    overflow: hidden;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .bg-video-right {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: saturate(1.05);
+  }
+
+  /* 让左边缘柔和过渡 */
+  .bg-mask-right {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(
+        to left,
+        rgba(255,255,255,0) 0%,
+        rgba(255,255,255,0) 25%,
+        rgba(255,255,255,0.25) 55%,
+        rgba(255,255,255,0.65) 80%,
+        rgba(255,255,255,1) 100%
+      ),
+      radial-gradient(
+        120% 80% at 0% 50%,
+        rgba(255,255,255,0.55) 0%,
+        rgba(255,255,255,0) 60%
+      );
   }
   
   /* 主布局 */
@@ -1127,6 +1463,18 @@
     outline-offset: 3px;
   }
 
+  .info-card--action:disabled,
+  .info-card--action.info-card--disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  .info-card--action:disabled:hover,
+  .info-card--action.info-card--disabled:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
   .info-action {
     display: inline-flex;
     align-items: center;
@@ -1199,6 +1547,48 @@
     color: #fff;
     background: #1a73e8;
     flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .avatar-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    color: #ffffff;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .info-card--action:hover .avatar-overlay,
+  .info-card--action.uploading .avatar-overlay {
+    opacity: 1;
+  }
+
+  .info-card--action.uploading {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .info-card:hover {
@@ -1518,6 +1908,58 @@
       transform: none;
       filter: none;
     }
+  }
+
+  /* Logout Confirmation Modal */
+  .modal--logout {
+    text-align: center;
+  }
+
+  .modal--logout .modal-header {
+    justify-content: center;
+    position: relative;
+  }
+
+  .modal--logout .modal-close {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .modal--logout .modal-body {
+    padding: 24px 16px 20px;
+  }
+
+  .logout-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.06);
+    color: #0f172a;
+  }
+
+  .logout-text {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(15, 23, 42, 0.78);
+  }
+
+  .modal--logout .modal-actions {
+    justify-content: center;
+    gap: 16px;
+    padding: 16px 24px 24px;
+    border-top: none;
+  }
+
+  .modal--logout .modal-btn {
+    min-width: 100px;
+    padding: 12px 24px;
   }
   </style>
   

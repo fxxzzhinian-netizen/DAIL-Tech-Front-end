@@ -588,7 +588,10 @@ const handleSubmit = async () => {
         username: resp?.username || '',
         created_at: resp?.created_at || '',
         // optional: backend may return display_name (preferred for UI)
-        display_name: resp?.display_name ?? resp?.displayName ?? ''
+        display_name: resp?.display_name ?? resp?.displayName ?? '',
+        email: resp?.email ?? '',
+        birthday: resp?.birthday ?? '',
+        photo: resp?.photo ?? ''
       },
       remember.value
     )

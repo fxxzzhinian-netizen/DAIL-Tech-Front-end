@@ -105,25 +105,151 @@
               rows="2"
               :placeholder="i18n.locale === 'zh' ? '副标题（可选）…' : 'Optional short dek…'"
             ></textarea>
+
+            <!-- 封面图上传 - 放在标题下方，横线上方 -->
+            <div class="cover-section reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '200ms' }">
+              <div v-if="coverImage" class="cover-preview">
+                <img :src="coverImage.url" alt="Cover preview" class="cover-img" />
+                <button
+                  class="cover-remove"
+                  type="button"
+                  @click="removeCoverImage"
+                  :disabled="isPublishing"
+                  :aria-label="i18n.locale === 'zh' ? '移除封面' : 'Remove cover'"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+              <label v-else class="cover-dropzone" :class="{ uploading: isUploadingCover }">
+                <input
+                  ref="coverInputRef"
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  class="sr-only"
+                  :disabled="isPublishing || isUploadingCover"
+                  @change="handleCoverUpload"
+                />
+                <div class="dropzone-content">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="dropzone-icon">
+                    <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                    <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+                    <path d="M21 15l-5-5L5 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span class="dropzone-text">
+                    {{ isUploadingCover 
+                      ? (i18n.locale === 'zh' ? '上传中...' : 'Uploading...') 
+                      : (i18n.locale === 'zh' ? '添加封面图' : 'Add cover image') 
+                    }}
+                  </span>
+                </div>
+              </label>
+            </div>
           </header>
 
           <div class="divider" aria-hidden="true"></div>
 
+          <!-- 图文混排编辑区域 -->
           <div class="content">
-            <textarea
-              class="content-textarea"
-              v-model="contentText"
-              :disabled="isPublishing"
-              rows="12"
-              :placeholder="i18n.locale === 'zh' ? '正文：每行一段' : 'Content: one paragraph per line'"
-            ></textarea>
+            <div class="section-label">{{ i18n.locale === 'zh' ? '正文内容' : 'Content' }}</div>
+            
+            <!-- 可视化编辑区：块列表 -->
+            <div class="visual-editor">
+              <div 
+                v-for="(block, idx) in contentBlocks" 
+                :key="block.id" 
+                class="editor-block"
+                :class="{ 'editor-block--image': block.type === 'image' }"
+              >
+                <!-- 文本块 -->
+                <div v-if="block.type === 'text'" class="block-text">
+                  <textarea
+                    class="block-textarea"
+                    v-model="block.content"
+                    :disabled="isPublishing"
+                    rows="3"
+                    :placeholder="i18n.locale === 'zh' ? '输入段落内容...' : 'Write paragraph...'"
+                    @input="autoResizeTextarea($event)"
+                    @keydown.enter="handleEnterKey($event, idx)"
+                  ></textarea>
+                  <button
+                    v-if="contentBlocks.length > 1"
+                    class="block-remove"
+                    type="button"
+                    @click="removeBlock(idx)"
+                    :disabled="isPublishing"
+                    :title="i18n.locale === 'zh' ? '删除段落' : 'Remove paragraph'"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- 图片块 -->
+                <div v-else-if="block.type === 'image'" class="block-image">
+                  <img :src="block.url" alt="Image" class="block-image-preview" />
+                  <button
+                    class="block-remove block-remove--image"
+                    type="button"
+                    @click="removeBlock(idx)"
+                    :disabled="isPublishing"
+                    :title="i18n.locale === 'zh' ? '删除图片' : 'Remove image'"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- 块之间的插入按钮 -->
+                <div class="block-insert-bar">
+                  <button
+                    class="insert-btn"
+                    type="button"
+                    @click="insertTextBlockAfter(idx)"
+                    :disabled="isPublishing"
+                    :title="i18n.locale === 'zh' ? '添加段落' : 'Add paragraph'"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <span>{{ i18n.locale === 'zh' ? '段落' : 'Text' }}</span>
+                  </button>
+                  <label class="insert-btn" :class="{ uploading: isUploadingContent }">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      class="sr-only"
+                      :disabled="isPublishing || isUploadingContent"
+                      @change="handleInsertImage($event, idx)"
+                    />
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                      <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+                      <path d="M21 15l-5-5L5 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>{{ isUploadingContent ? (i18n.locale === 'zh' ? '上传中...' : 'Uploading...') : (i18n.locale === 'zh' ? '图片' : 'Image') }}</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 空状态：添加第一个块 -->
+              <div v-if="contentBlocks.length === 0" class="editor-empty">
+                <button class="empty-add-btn" type="button" @click="addFirstTextBlock" :disabled="isPublishing">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  <span>{{ i18n.locale === 'zh' ? '开始编写内容' : 'Start writing' }}</span>
+                </button>
+              </div>
+            </div>
 
             <div class="content-footer">
               <div class="content-hint">
-                {{ i18n.locale === 'zh' ? '段落数：' : 'Paragraphs: ' }}{{ paragraphCount }}
-              </div>
-              <div class="content-preview-hint">
-                {{ i18n.locale === 'zh' ? '提示：发布后展示会按段落分行渲染。' : 'Tip: Publishing renders each line as a paragraph.' }}
+                {{ i18n.locale === 'zh' ? '段落：' : 'Paragraphs: ' }}{{ textBlockCount }}
+                <span v-if="imageBlockCount > 0"> · {{ i18n.locale === 'zh' ? '图片：' : 'Images: ' }}{{ imageBlockCount }}</span>
               </div>
             </div>
           </div>
@@ -157,7 +283,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18nStore } from '@/stores/i18n'
 import { useErrorStore } from '@/stores/error'
@@ -165,6 +291,7 @@ import { useSuccessStore } from '@/stores/success'
 import { useWarningStore } from '@/stores/warning'
 import { useUserStore } from '@/stores/user'
 import { createNews, formatDateLong } from '@/services/newsService'
+import { uploadImage, linkImageToNews } from '@/services/imageService'
 
 const router = useRouter()
 const i18n = useI18nStore()
@@ -187,10 +314,10 @@ function computeCanManageFromToken(token) {
     const [, payload] = String(token || '').split('.')
     if (!payload) return false
     const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
-    const roles = Array.isArray(json?.roles) ? json.roles : []
     const role = json?.role
-    if (roles.includes(3) || role === 3) return true
-    if (!('roles' in json) && !('role' in json)) return true
+    // role >= 3 can publish/delete news
+    if (typeof role === 'number' && role >= 3) return true
+    if (!('role' in json)) return true
     return false
   } catch {
     return !!token
@@ -215,8 +342,141 @@ const draft = ref({
   author: '',
 })
 
-const contentText = ref('')
 const isPublishing = ref(false)
+
+// 图片上传相关
+const coverImage = ref(null) // { id, url, file }
+const isUploadingCover = ref(false)
+const isUploadingContent = ref(false)
+const coverInputRef = ref(null)
+const insertAfterIndex = ref(-1) // 记录图片插入位置
+
+// 块编辑器：每个块是 { id, type: 'text'|'image', content?, url?, imageId?, caption? }
+let blockIdCounter = 0
+const contentBlocks = ref([
+  { id: blockIdCounter++, type: 'text', content: '' }
+])
+
+// 允许的图片类型
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10MB
+
+function validateImageFile(file) {
+  if (!file) return { valid: false, error: '请选择图片文件' }
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    return { valid: false, error: '仅支持 JPG、PNG、GIF、WebP 格式' }
+  }
+  if (file.size > MAX_IMAGE_SIZE) {
+    return { valid: false, error: '图片大小不能超过 10MB' }
+  }
+  return { valid: true, error: null }
+}
+
+async function handleCoverUpload(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  const validation = validateImageFile(file)
+  if (!validation.valid) {
+    warningStore.showWarning(validation.error)
+    return
+  }
+
+  isUploadingCover.value = true
+  try {
+    const result = await uploadImage(file, 'cover')
+    coverImage.value = {
+      id: result.id,
+      url: result.url,
+      file: file,
+    }
+    successStore.showSuccess(i18n.locale === 'zh' ? '封面上传成功' : 'Cover uploaded')
+  } catch (e) {
+    errorStore.showError(e?.message || (i18n.locale === 'zh' ? '封面上传失败' : 'Cover upload failed'))
+  } finally {
+    isUploadingCover.value = false
+    // 清空input以便重复选择同一文件
+    if (coverInputRef.value) coverInputRef.value.value = ''
+  }
+}
+
+function removeCoverImage() {
+  coverImage.value = null
+}
+
+// 块编辑器操作
+function addFirstTextBlock() {
+  contentBlocks.value.push({ id: blockIdCounter++, type: 'text', content: '' })
+}
+
+function insertTextBlockAfter(index) {
+  const newBlock = { id: blockIdCounter++, type: 'text', content: '' }
+  contentBlocks.value.splice(index + 1, 0, newBlock)
+}
+
+function removeBlock(index) {
+  if (contentBlocks.value.length <= 1 && contentBlocks.value[0].type === 'text') {
+    // 保留至少一个文本块，只清空内容
+    contentBlocks.value[0].content = ''
+    return
+  }
+  contentBlocks.value.splice(index, 1)
+}
+
+async function handleInsertImage(event, afterIndex) {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  const validation = validateImageFile(file)
+  if (!validation.valid) {
+    warningStore.showWarning(validation.error)
+    return
+  }
+
+  isUploadingContent.value = true
+  insertAfterIndex.value = afterIndex
+  
+  try {
+    const result = await uploadImage(file, 'content')
+    const newBlock = {
+      id: blockIdCounter++,
+      type: 'image',
+      url: result.url,
+      imageId: result.id,
+      caption: '',
+    }
+    contentBlocks.value.splice(afterIndex + 1, 0, newBlock)
+    successStore.showSuccess(i18n.locale === 'zh' ? '图片已插入' : 'Image inserted')
+  } catch (e) {
+    errorStore.showError(e?.message || (i18n.locale === 'zh' ? '图片上传失败' : 'Image upload failed'))
+  } finally {
+    isUploadingContent.value = false
+    insertAfterIndex.value = -1
+    // 清空 input
+    event.target.value = ''
+  }
+}
+
+function autoResizeTextarea(event) {
+  const el = event.target
+  el.style.height = 'auto'
+  el.style.height = el.scrollHeight + 'px'
+}
+
+function handleEnterKey(event, blockIndex) {
+  // Shift+Enter 换行，Enter 创建新段落
+  if (!event.shiftKey) {
+    event.preventDefault()
+    insertTextBlockAfter(blockIndex)
+    // 聚焦新块
+    nextTick(() => {
+      const textareas = document.querySelectorAll('.block-textarea')
+      if (textareas[blockIndex + 1]) {
+        textareas[blockIndex + 1].focus()
+      }
+    })
+  }
+}
 
 const pageEnter = ref(false)
 
@@ -242,7 +502,8 @@ function resetDraft() {
     subtitle: '',
     author: '',
   }
-  contentText.value = ''
+  coverImage.value = null
+  contentBlocks.value = [{ id: blockIdCounter++, type: 'text', content: '' }]
 }
 
 onMounted(() => {
@@ -289,14 +550,37 @@ watch(
   }
 )
 
-const contentParagraphs = computed(() =>
-  String(contentText.value || '')
-    .split('\n')
-    .map((s) => s.trim())
-    .filter(Boolean)
-)
+// 从块生成内容数组（用于发布）
+const contentParagraphs = computed(() => {
+  const result = []
+  let imageIndex = 0
+  for (const block of contentBlocks.value) {
+    if (block.type === 'text') {
+      const text = String(block.content || '').trim()
+      if (text) result.push(text)
+    } else if (block.type === 'image') {
+      result.push(`[IMAGE:${imageIndex}]`)
+      imageIndex++
+    }
+  }
+  return result
+})
 
-const paragraphCount = computed(() => contentParagraphs.value.length)
+// 提取所有图片块（用于发布时关联）
+const contentImages = computed(() => {
+  return contentBlocks.value
+    .filter(b => b.type === 'image')
+    .map((b, idx) => ({
+      id: b.imageId,
+      url: b.url,
+      position: idx,
+      caption: b.caption || '',
+    }))
+})
+
+const textBlockCount = computed(() => contentBlocks.value.filter(b => b.type === 'text' && b.content?.trim()).length)
+const imageBlockCount = computed(() => contentBlocks.value.filter(b => b.type === 'image').length)
+const paragraphCount = computed(() => textBlockCount.value)
 
 const article = computed(() => ({
   slug: String(draft.value.slug || '').trim(),
@@ -349,7 +633,10 @@ async function publish() {
     title: article.value.title,
     subtitle: article.value.subtitle,
     author: article.value.author,
-    content: article.value.content,
+    content: contentParagraphs.value,
+    // 添加图片信息
+    cover_image: coverImage.value?.url || null,
+    images: contentImages.value,
   }
 
   // Basic validation (backend still validates)
@@ -365,6 +652,22 @@ async function publish() {
   isPublishing.value = true
   try {
     const data = await createNews(payload)
+    const newsId = data?.id
+
+    // 如果有图片且返回了新闻ID，关联图片到新闻
+    if (newsId) {
+      const imageIds = []
+      if (coverImage.value?.id) imageIds.push(coverImage.value.id)
+      contentImages.value.forEach((img) => {
+        if (img.id) imageIds.push(img.id)
+      })
+
+      // 并行关联所有图片
+      await Promise.all(
+        imageIds.map((imgId) => linkImageToNews(imgId, newsId).catch(() => null))
+      )
+    }
+
     successStore.showSuccess(t('user.newsSuccess') || (i18n.locale === 'zh' ? '发布成功' : 'Published'))
     const slug = data?.slug || payload.slug
     if (slug) router.push({ name: 'news-detail', params: { slug } })
@@ -446,64 +749,68 @@ async function publish() {
 }
 
 .meta-bar {
-  margin: 8px auto 18px;
-  max-width: 1100px;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  padding: 12px;
-  border: none;
-  /* border-radius: 16px; */
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: none;
+  margin: 0 auto 24px;
+  max-width: 860px;
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  padding: 0;
+  background: transparent;
   position: relative;
-  z-index: 20; /* ensure dropdown stays clickable */
+  z-index: 20;
 }
 
 .meta-field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
-  position: relative; /* anchor dropdown */
+  flex: 1;
+  position: relative;
 }
 
 .meta-label {
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #000000;
+  color: rgba(0, 0, 0, 0.45);
 }
 
 .meta-control {
-  height: 44px;
+  height: 40px;
   width: 100%;
-  border-radius: 14px;
-  border: 1px solid #000000;
-  background: #ffffff; /* avoid "transparent" feel */
-  padding: 0 14px;
-  font-size: 14px;
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  background: transparent;
+  padding: 0;
+  font-size: 15px;
   color: #000000;
   outline: none;
+  transition: border-color 0.2s ease;
 }
 
 .meta-control--slug {
-  color: rgba(0, 0, 0, 0.55);
+  color: rgba(0, 0, 0, 0.7);
 }
 
 .meta-control--slug::placeholder {
-  color: rgba(0, 0, 0, 0.45);
+  color: rgba(0, 0, 0, 0.3);
   opacity: 1;
 }
 
+.meta-control:hover {
+  border-bottom-color: rgba(0, 0, 0, 0.4);
+}
+
 .meta-control:focus {
-  border-color: #000000;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.10);
+  border-bottom-color: #000000;
+  box-shadow: none;
 }
 
 .meta-control::placeholder {
-  color: rgba(0, 0, 0, 0.45);
+  color: rgba(0, 0, 0, 0.3);
   opacity: 1;
 }
 
@@ -511,7 +818,7 @@ async function publish() {
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   text-align: left;
   cursor: pointer;
 }
@@ -524,27 +831,31 @@ async function publish() {
 }
 
 .meta-select__chev {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #000000;
+  color: rgba(0, 0, 0, 0.4);
   flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.meta-select:hover .meta-select__chev {
+  color: #000000;
 }
 
 .meta-options {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 4px);
   left: 0;
   width: 100%;
-  min-width: 240px;
+  min-width: 180px;
   z-index: 80;
-  margin-top: 8px;
-  border-radius: 14px;
-  border: 1px solid #000000;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.10);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   overflow: hidden;
 }
 
@@ -729,9 +1040,8 @@ async function publish() {
   bottom: 0;
   z-index: 40;
   background: #ffffff;
-  backdrop-filter: none;
-  border-top: none;
-  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.06);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -6px 32px rgba(0, 0, 0, 0.08);
   padding: 0 30px;
 }
 
@@ -739,11 +1049,11 @@ async function publish() {
   max-width: 1400px;
   margin: 0 auto;
   min-height: 72px;
-  padding: 14px 0;
+  padding: 20px 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 24px;
 }
 
 .bottom-left {
@@ -751,23 +1061,22 @@ async function publish() {
 }
 
 .bottom-title {
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: #000000;
 }
 
 .bottom-sub {
   margin-top: 4px;
-  font-size: 12px;
-  color: rgba(0, 0, 0, 0.55);
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.7);
   max-width: 720px;
 }
 
 .bottom-right {
   display: inline-flex;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
@@ -775,10 +1084,418 @@ async function publish() {
 /* Bigger controls inside wider bottom bar */
 .bottom-bar .btn {
   height: 36px;
-  padding: 0 14px;
-  font-size: 12px;
+  padding: 0 16px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.03em;
+}
+
+/* 图片上传样式 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.section-label {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #000000;
+  margin-bottom: 12px;
+}
+
+/* 封面图上传 */
+.cover-section {
+  max-width: 860px;
+  margin: 32px auto 0;
+}
+
+.cover-dropzone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cover-dropzone:hover {
+  border-color: #000000;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.cover-dropzone.uploading {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.dropzone-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.dropzone-icon {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.dropzone-text {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.cover-preview {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.cover-img {
+  width: 100%;
+  height: auto;
+  max-height: 360px;
+  object-fit: cover;
+  display: block;
+}
+
+.cover-remove {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.cover-preview:hover .cover-remove {
+  opacity: 1;
+}
+
+.cover-remove:hover {
+  background: #000000;
+  transform: scale(1.1);
+}
+
+/* 内容图片上传 */
+.images-section {
+  max-width: 860px;
+  margin: 24px auto 0;
+}
+
+.images-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.image-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.image-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.image-item:hover .image-actions {
+  opacity: 1;
+}
+
+.image-action-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.image-action-btn:hover {
+  background: #000000;
+  transform: scale(1.1);
+}
+
+.image-action-btn--danger:hover {
+  background: #dc2626;
+}
+
+.image-index {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.image-add {
+  aspect-ratio: 1;
+  border: 2px dashed rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.image-add:hover {
+  border-color: #000000;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.image-add.uploading {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.image-add-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.image-add-content span {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* 可视化块编辑器 */
+.visual-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 300px;
+}
+
+.editor-block {
+  position: relative;
+}
+
+/* 文本块 */
+.block-text {
+  position: relative;
+}
+
+.block-textarea {
+  width: 100%;
+  border: 1px solid transparent;
+  outline: none;
+  background: transparent;
+  resize: none;
+  font-size: 18px;
+  line-height: 1.8;
+  color: #000000;
+  padding: 12px 40px 12px 16px;
+  border-radius: 10px;
+  min-height: 60px;
+  transition: all 0.2s ease;
+}
+
+.block-textarea:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.block-textarea:focus {
+  background: #ffffff;
+  border-color: #000000;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+}
+
+.block-textarea::placeholder {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+.block-remove {
+  position: absolute;
+  top: 12px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.block-text:hover .block-remove,
+.editor-block--image:hover .block-remove {
+  opacity: 1;
+}
+
+.block-remove:hover {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+/* 图片块 */
+.block-image {
+  position: relative;
+  margin: 8px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.block-image-preview {
+  width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  display: block;
+}
+
+
+
+.block-remove--image {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  opacity: 0;
+}
+
+.block-image:hover .block-remove--image {
+  opacity: 1;
+}
+
+.block-remove--image:hover {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+/* 块之间的插入栏 */
+.block-insert-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.editor-block:hover .block-insert-bar,
+.block-insert-bar:focus-within {
+  opacity: 1;
+}
+
+.insert-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #ffffff;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.insert-btn:hover {
+  border-color: #000000;
+  color: #000000;
+  background: #ffffff;
+}
+
+.insert-btn.uploading {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+/* 空状态 */
+.editor-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  border: 2px dashed rgba(0, 0, 0, 0.15);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.empty-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 999px;
+  border: 1px solid #000000;
+  background: #ffffff;
+  color: #000000;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.empty-add-btn:hover {
+  background: #000000;
+  color: #ffffff;
 }
 </style>
 

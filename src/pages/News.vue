@@ -174,8 +174,11 @@
             <div class="thumb-title">{{ item.title }}</div>
           </div>
           <div class="meta">
-            <span class="pill">{{ t(`news.categories.${item.category}`) }}</span>
-            <span class="meta-date">{{ item.publishedAt }}</span>
+            <span class="meta-line">
+              <span class="meta-item meta-tag">{{ t(`news.categories.${item.category}`) }}</span>
+              <span class="meta-sep" aria-hidden="true">|</span>
+              <span class="meta-item meta-date">{{ formatDateText(item.publishedAt) }}</span>
+            </span>
           </div>
         </article>
       </div>
@@ -207,6 +210,19 @@ const activeTab = ref('ALL')
 
 const items = ref([])
 const isLoading = ref(false)
+
+function formatDateText(input) {
+  if (!input) return ''
+  const d = new Date(input)
+  if (Number.isNaN(d.getTime())) return String(input)
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  })
+    .format(d)
+    .toUpperCase()
+}
 
 let io = null
 function setCardRef(el) {
@@ -541,32 +557,32 @@ watch(
   padding-top: 8px;
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
+  justify-content: flex-start;
+  padding-left: 8px; /* 左下角对齐到封面边缘 */
 }
 
-.pill {
-  display: inline-block;
-  font-size: 12px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  border-radius: 0;
-  padding: 0 0 2px;
-  border: none;
-  background: transparent;
-  color: rgba(17, 24, 39, 0.72);
-  border-bottom: 1.5px solid currentColor; /* single underline */
-  margin-left: 8px; /* tag shifts slightly right */
+.meta-line {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  white-space: nowrap;
 }
 
-.meta-date {
-  /* Match title typography */
+.meta-item {
   font-size: 12px;
   line-height: 1.35;
   font-weight: 500;
-  letter-spacing: 0;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: rgba(17, 24, 39, 0.72);
-  white-space: nowrap;
-  margin-right: 8px; /* tag shifts slightly right */
+}
+
+.meta-sep {
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: rgba(17, 24, 39, 0.55);
 }
 
 /* Removed `.headline`: title is now centered on the cover image */
