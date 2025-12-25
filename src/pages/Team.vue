@@ -27,9 +27,16 @@
           </div>
           <div v-if="founders.length" class="members-row">
             <div v-for="member in founders" :key="member.user_id" class="member-card member-card--founder" :class="{ 'member-card--private': member.private_hidden }" @click="viewProfile(member)">
-              <div class="member-avatar">
-                <img v-if="getResumeAvatar(member)" :src="getResumeAvatar(member)" :alt="member.real_name" />
+              <div class="member-avatar" :class="{ 'avatar-loading': !isAvatarLoaded(member) }">
+                <img 
+                  v-if="getResumeAvatar(member)" 
+                  :src="getResumeAvatar(member)" 
+                  :alt="member.real_name"
+                  loading="lazy"
+                  @load="onAvatarLoad(getResumeAvatar(member))"
+                />
                 <div v-else class="avatar-letter">{{ getInitial(member.real_name) }}</div>
+                <div class="avatar-skeleton"></div>
               </div>
               <div class="member-info">
                 <h3 class="member-name">{{ member.real_name || (isZh ? '未设置' : 'Not set') }}</h3>
@@ -55,9 +62,16 @@
           </div>
           <div v-if="managers.length" class="members-row">
             <div v-for="member in managers" :key="member.user_id" class="member-card member-card--manager" :class="{ 'member-card--private': member.private_hidden }" @click="viewProfile(member)">
-              <div class="member-avatar">
-                <img v-if="getResumeAvatar(member)" :src="getResumeAvatar(member)" :alt="member.real_name" />
+              <div class="member-avatar" :class="{ 'avatar-loading': !isAvatarLoaded(member) }">
+                <img 
+                  v-if="getResumeAvatar(member)" 
+                  :src="getResumeAvatar(member)" 
+                  :alt="member.real_name"
+                  loading="lazy"
+                  @load="onAvatarLoad(getResumeAvatar(member))"
+                />
                 <div v-else class="avatar-letter">{{ getInitial(member.real_name) }}</div>
+                <div class="avatar-skeleton"></div>
               </div>
               <div class="member-info">
                 <h3 class="member-name">{{ member.real_name || (isZh ? '未设置' : 'Not set') }}</h3>
@@ -83,9 +97,16 @@
           </div>
           <div v-if="staff.length" class="members-row">
             <div v-for="member in staff" :key="member.user_id" class="member-card member-card--staff member-card--compact" :class="{ 'member-card--private': member.private_hidden }" @click="viewProfile(member)">
-              <div class="member-avatar member-avatar--small">
-                <img v-if="getResumeAvatar(member)" :src="getResumeAvatar(member)" :alt="member.real_name" />
+              <div class="member-avatar member-avatar--small" :class="{ 'avatar-loading': !isAvatarLoaded(member) }">
+                <img 
+                  v-if="getResumeAvatar(member)" 
+                  :src="getResumeAvatar(member)" 
+                  :alt="member.real_name"
+                  loading="lazy"
+                  @load="onAvatarLoad(getResumeAvatar(member))"
+                />
                 <div v-else class="avatar-letter">{{ getInitial(member.real_name) }}</div>
+                <div class="avatar-skeleton"></div>
               </div>
               <div class="member-info">
                 <h3 class="member-name">{{ member.real_name || (isZh ? '未设置' : 'Not set') }}</h3>
@@ -146,6 +167,7 @@ import { useRouter } from 'vue-router'
 import { useI18nStore } from '@/stores/i18n'
 import { useErrorStore } from '@/stores/error'
 import { listAllResumes } from '@/services/resumeService'
+import { preloadImagesInBackground } from '@/utils/imagePreloader'
 
 const router = useRouter()
 const i18n = useI18nStore()
@@ -156,6 +178,7 @@ const pageEnter = ref(false)
 const isLoading = ref(true)
 const members = ref([])
 const selectedMember = ref(null)
+const loadedAvatars = ref(new Set()) // 跟踪已加载的头像
 
 // 按角色分组
 const founders = computed(() => members.value.filter(m => m.role === 4))
@@ -170,6 +193,17 @@ function getInitial(name) {
 // 获取简历头像（优先使用 avatar_url）
 function getResumeAvatar(member) {
   return member.avatar_url || member.avatarUrl || member.avatar || ''
+}
+
+// 标记头像已加载
+function onAvatarLoad(url) {
+  if (url) loadedAvatars.value.add(url)
+}
+
+// 检查头像是否已加载
+function isAvatarLoaded(member) {
+  const url = getResumeAvatar(member)
+  return !url || loadedAvatars.value.has(url)
 }
 
 // 点击卡片：如果简历公开则跳转，否则弹出简要信息卡片
@@ -194,6 +228,12 @@ async function loadTeam() {
     const filtered = list.filter(m => (m.role || 0) > 0)
     filtered.sort((a, b) => (b.role || 0) - (a.role || 0))
     members.value = filtered
+    
+    // 数据加载完成后，立即在后台预加载所有头像
+    const avatarUrls = filtered
+      .map(m => m.avatar_url || m.avatarUrl || m.avatar)
+      .filter(Boolean)
+    preloadImagesInBackground(avatarUrls)
   } catch (e) {
     errorStore.showError(isZh.value ? `加载失败：${e?.message || e}` : `Load failed: ${e?.message || e}`)
   } finally {
@@ -384,6 +424,7 @@ onMounted(() => {
   background: #f3f4f6;
   display: grid;
   place-items: center;
+  position: relative;
 }
 
 .member-avatar--small {
@@ -395,6 +436,33 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.member-avatar.avatar-loading img {
+  opacity: 0;
+}
+
+/* 头像骨架屏 */
+.avatar-skeleton {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.member-avatar.avatar-loading .avatar-skeleton {
+  opacity: 1;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .avatar-letter {

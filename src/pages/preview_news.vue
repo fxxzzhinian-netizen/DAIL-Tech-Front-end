@@ -150,50 +150,61 @@
 
           <div class="divider" aria-hidden="true"></div>
 
-          <!-- 图文混排编辑区域 -->
+          <!-- 图文混排编辑区域 - Word风格 -->
           <div class="content">
             <div class="section-label">{{ i18n.locale === 'zh' ? '正文内容' : 'Content' }}</div>
             
-            <!-- 可视化编辑区：块列表 -->
-            <div class="visual-editor">
+            <!-- 工具栏 -->
+            <div class="editor-toolbar">
+              <label class="toolbar-btn" :class="{ uploading: isUploadingContent }">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  class="sr-only"
+                  :disabled="isPublishing || isUploadingContent"
+                  @change="handleInsertImageAtCursor($event)"
+                />
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                  <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+                  <path d="M21 15l-5-5L5 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>{{ isUploadingContent ? (i18n.locale === 'zh' ? '上传中...' : 'Uploading...') : (i18n.locale === 'zh' ? '插入图片' : 'Insert Image') }}</span>
+              </label>
+            </div>
+            
+            <!-- Word风格编辑区 -->
+            <div class="word-editor" ref="wordEditorRef">
               <div 
                 v-for="(block, idx) in contentBlocks" 
                 :key="block.id" 
                 class="editor-block"
-                :class="{ 'editor-block--image': block.type === 'image' }"
+                :class="{ 
+                  'editor-block--image': block.type === 'image',
+                  'editor-block--focused': focusedBlockIndex === idx
+                }"
               >
-                <!-- 文本块 -->
+                <!-- 文本块 - 自动扩展的编辑区 -->
                 <div v-if="block.type === 'text'" class="block-text">
-                  <textarea
-                    class="block-textarea"
-                    v-model="block.content"
-                    :disabled="isPublishing"
-                    rows="3"
-                    :placeholder="i18n.locale === 'zh' ? '输入段落内容...' : 'Write paragraph...'"
-                    @input="autoResizeTextarea($event)"
-                    @keydown.enter="handleEnterKey($event, idx)"
-                  ></textarea>
-                  <button
-                    v-if="contentBlocks.length > 1"
-                    class="block-remove"
-                    type="button"
-                    @click="removeBlock(idx)"
-                    :disabled="isPublishing"
-                    :title="i18n.locale === 'zh' ? '删除段落' : 'Remove paragraph'"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                      <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                  </button>
+                  <div
+                    class="block-editable"
+                    contenteditable="true"
+                    :data-placeholder="i18n.locale === 'zh' ? '输入内容...' : 'Start typing...'"
+                    :data-index="idx"
+                    @focus="focusedBlockIndex = idx"
+                    @blur="handleTextBlur($event, idx)"
+                    @keydown="handleKeyDown($event, idx)"
+                    @paste="handlePaste($event, idx)"
+                  ></div>
                 </div>
 
                 <!-- 图片块 -->
-                <div v-else-if="block.type === 'image'" class="block-image">
+                <div v-else-if="block.type === 'image'" class="block-image" @click="focusedBlockIndex = idx">
                   <img :src="block.url" alt="Image" class="block-image-preview" />
                   <button
                     class="block-remove block-remove--image"
                     type="button"
-                    @click="removeBlock(idx)"
+                    @click.stop="removeBlock(idx)"
                     :disabled="isPublishing"
                     :title="i18n.locale === 'zh' ? '删除图片' : 'Remove image'"
                   >
@@ -202,47 +213,16 @@
                     </svg>
                   </button>
                 </div>
-
-                <!-- 块之间的插入按钮 -->
-                <div class="block-insert-bar">
-                  <button
-                    class="insert-btn"
-                    type="button"
-                    @click="insertTextBlockAfter(idx)"
-                    :disabled="isPublishing"
-                    :title="i18n.locale === 'zh' ? '添加段落' : 'Add paragraph'"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                      <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    <span>{{ i18n.locale === 'zh' ? '段落' : 'Text' }}</span>
-                  </button>
-                  <label class="insert-btn" :class="{ uploading: isUploadingContent }">
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/gif,image/webp"
-                      class="sr-only"
-                      :disabled="isPublishing || isUploadingContent"
-                      @change="handleInsertImage($event, idx)"
-                    />
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                      <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/>
-                      <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
-                      <path d="M21 15l-5-5L5 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <span>{{ isUploadingContent ? (i18n.locale === 'zh' ? '上传中...' : 'Uploading...') : (i18n.locale === 'zh' ? '图片' : 'Image') }}</span>
-                  </label>
-                </div>
               </div>
 
-              <!-- 空状态：添加第一个块 -->
-              <div v-if="contentBlocks.length === 0" class="editor-empty">
-                <button class="empty-add-btn" type="button" @click="addFirstTextBlock" :disabled="isPublishing">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <!-- 空状态 -->
+              <div v-if="contentBlocks.length === 0" class="editor-empty" @click="addFirstTextBlock">
+                <div class="empty-hint">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                     <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                   </svg>
-                  <span>{{ i18n.locale === 'zh' ? '开始编写内容' : 'Start writing' }}</span>
-                </button>
+                  <span>{{ i18n.locale === 'zh' ? '点击此处开始编写...' : 'Click here to start writing...' }}</span>
+                </div>
               </div>
             </div>
 
@@ -357,6 +337,11 @@ const contentBlocks = ref([
   { id: blockIdCounter++, type: 'text', content: '' }
 ])
 
+// Word编辑器相关
+const wordEditorRef = ref(null)
+const textBlockRefs = ref([])
+const focusedBlockIndex = ref(0)
+
 // 允许的图片类型
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10MB
@@ -404,37 +389,259 @@ function removeCoverImage() {
   coverImage.value = null
 }
 
-// 块编辑器操作
+// Word风格编辑器操作
 function addFirstTextBlock() {
   contentBlocks.value.push({ id: blockIdCounter++, type: 'text', content: '' })
+  nextTick(() => {
+    const editables = document.querySelectorAll('.block-editable')
+    if (editables.length > 0) {
+      editables[editables.length - 1].focus()
+    }
+  })
 }
 
 function insertTextBlockAfter(index) {
   const newBlock = { id: blockIdCounter++, type: 'text', content: '' }
   contentBlocks.value.splice(index + 1, 0, newBlock)
+  nextTick(() => {
+    const editables = document.querySelectorAll('.block-editable')
+    if (editables[index + 1]) {
+      editables[index + 1].focus()
+    }
+  })
 }
 
 function removeBlock(index) {
   if (contentBlocks.value.length <= 1 && contentBlocks.value[0].type === 'text') {
-    // 保留至少一个文本块，只清空内容
     contentBlocks.value[0].content = ''
+    nextTick(() => {
+      const editables = document.querySelectorAll('.block-editable')
+      if (editables[0]) {
+        editables[0].innerHTML = ''
+        editables[0].focus()
+      }
+    })
     return
   }
   contentBlocks.value.splice(index, 1)
+  // 聚焦到前一个块或后一个块
+  nextTick(() => {
+    const editables = document.querySelectorAll('.block-editable')
+    const targetIdx = Math.min(index, editables.length - 1)
+    if (editables[targetIdx]) {
+      editables[targetIdx].focus()
+    }
+  })
 }
 
-async function handleInsertImage(event, afterIndex) {
+// 同步所有编辑器内容到数据
+function syncAllContent() {
+  const editables = document.querySelectorAll('.block-editable')
+  let editableIndex = 0
+  contentBlocks.value.forEach((block, idx) => {
+    if (block.type === 'text') {
+      if (editables[editableIndex]) {
+        block.content = editables[editableIndex].innerHTML
+      }
+      editableIndex++
+    }
+  })
+}
+
+// 处理失焦 - 保存内容
+function handleTextBlur(event, index) {
+  const el = event.target
+  contentBlocks.value[index].content = el.innerHTML
+}
+
+// 处理键盘事件
+function handleKeyDown(event, index) {
+  const el = event.target
+  
+  // Enter 创建新段落（不是 Shift+Enter）
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault()
+    
+    // 保存当前内容
+    syncAllContent()
+    
+    // 获取光标位置后的内容
+    const selection = window.getSelection()
+    if (!selection.rangeCount) return
+    const range = selection.getRangeAt(0)
+    
+    // 创建一个临时范围来获取光标后的内容
+    const afterRange = range.cloneRange()
+    afterRange.selectNodeContents(el)
+    afterRange.setStart(range.endContainer, range.endOffset)
+    const afterContent = afterRange.cloneContents()
+    
+    // 创建临时div来获取HTML
+    const tempDiv = document.createElement('div')
+    tempDiv.appendChild(afterContent)
+    const afterHtml = tempDiv.innerHTML
+    
+    // 删除光标后的内容
+    afterRange.deleteContents()
+    
+    // 更新当前块内容
+    contentBlocks.value[index].content = el.innerHTML
+    
+    // 创建新块并插入光标后的内容
+    const newBlock = { id: blockIdCounter++, type: 'text', content: afterHtml }
+    contentBlocks.value.splice(index + 1, 0, newBlock)
+    
+    // 聚焦新块并设置内容
+    nextTick(() => {
+      const editables = document.querySelectorAll('.block-editable')
+      const newEl = editables[index + 1]
+      if (newEl) {
+        newEl.innerHTML = afterHtml
+        newEl.focus()
+        // 将光标移到开头
+        const newSelection = window.getSelection()
+        const newRange = document.createRange()
+        newRange.selectNodeContents(newEl)
+        newRange.collapse(true)
+        newSelection.removeAllRanges()
+        newSelection.addRange(newRange)
+      }
+    })
+    return
+  }
+  
+  // Backspace 在块开头时合并到上一块
+  if (event.key === 'Backspace') {
+    const selection = window.getSelection()
+    if (!selection.rangeCount) return
+    const range = selection.getRangeAt(0)
+    
+    // 只有当光标在最开头且没有选中内容时才处理
+    if (!range.collapsed) return
+    
+    // 检查是否真的在块的最开头
+    const isAtVeryStart = (function() {
+      if (range.startOffset !== 0) return false
+      
+      let node = range.startContainer
+      while (node && node !== el) {
+        if (node.previousSibling) return false
+        node = node.parentNode
+      }
+      return true
+    })()
+    
+    if (isAtVeryStart && index > 0) {
+      event.preventDefault()
+      
+      // 保存当前内容
+      syncAllContent()
+      
+      // 找到上一个文本块
+      let prevTextIndex = -1
+      let prevEditableIndex = -1
+      let editableCount = 0
+      for (let i = 0; i < index; i++) {
+        if (contentBlocks.value[i].type === 'text') {
+          prevTextIndex = i
+          prevEditableIndex = editableCount
+          editableCount++
+        }
+      }
+      
+      if (prevTextIndex >= 0) {
+        const currentContent = el.innerHTML
+        const prevBlock = contentBlocks.value[prevTextIndex]
+        const prevContent = prevBlock.content || ''
+        
+        // 合并内容
+        prevBlock.content = prevContent + currentContent
+        
+        // 删除当前块
+        contentBlocks.value.splice(index, 1)
+        
+        // 聚焦到上一块并将光标放在原内容末尾
+        nextTick(() => {
+          const editables = document.querySelectorAll('.block-editable')
+          const targetEl = editables[prevEditableIndex]
+          if (targetEl) {
+            targetEl.innerHTML = prevBlock.content
+            targetEl.focus()
+            
+            // 将光标放在合并点
+            const newSelection = window.getSelection()
+            const newRange = document.createRange()
+            
+            try {
+              // 找到合适的位置
+              let charCount = 0
+              let targetNode = null
+              let targetOffset = 0
+              const mergePoint = prevContent.replace(/<[^>]*>/g, '').length
+              
+              const walker = document.createTreeWalker(targetEl, NodeFilter.SHOW_TEXT, null, false)
+              while (walker.nextNode()) {
+                const textNode = walker.currentNode
+                if (charCount + textNode.length >= mergePoint) {
+                  targetNode = textNode
+                  targetOffset = mergePoint - charCount
+                  break
+                }
+                charCount += textNode.length
+              }
+              
+              if (targetNode) {
+                newRange.setStart(targetNode, Math.min(targetOffset, targetNode.length))
+              } else {
+                newRange.selectNodeContents(targetEl)
+                newRange.collapse(false)
+              }
+              newRange.collapse(true)
+              newSelection.removeAllRanges()
+              newSelection.addRange(newRange)
+            } catch (e) {
+              newRange.selectNodeContents(targetEl)
+              newRange.collapse(false)
+              newSelection.removeAllRanges()
+              newSelection.addRange(newRange)
+            }
+          }
+        })
+      }
+    }
+  }
+}
+
+// 处理粘贴
+function handlePaste(event, index) {
+  event.preventDefault()
+  
+  // 获取纯文本
+  const text = event.clipboardData.getData('text/plain')
+  
+  // 插入纯文本
+  document.execCommand('insertText', false, text)
+}
+
+// 在当前光标位置插入图片
+async function handleInsertImageAtCursor(event) {
   const file = event.target.files?.[0]
   if (!file) return
 
   const validation = validateImageFile(file)
   if (!validation.valid) {
     warningStore.showWarning(validation.error)
+    event.target.value = ''
     return
   }
 
+  // 先同步内容
+  syncAllContent()
+
   isUploadingContent.value = true
-  insertAfterIndex.value = afterIndex
+  
+  // 确定插入位置（当前聚焦的块之后）
+  const insertIndex = focusedBlockIndex.value >= 0 ? focusedBlockIndex.value : contentBlocks.value.length - 1
   
   try {
     const result = await uploadImage(file, 'content')
@@ -445,37 +652,50 @@ async function handleInsertImage(event, afterIndex) {
       imageId: result.id,
       caption: '',
     }
-    contentBlocks.value.splice(afterIndex + 1, 0, newBlock)
+    contentBlocks.value.splice(insertIndex + 1, 0, newBlock)
+    
+    // 在图片后添加一个空文本块（如果下一个不是文本块）
+    if (insertIndex + 2 >= contentBlocks.value.length || contentBlocks.value[insertIndex + 2]?.type !== 'text') {
+      contentBlocks.value.splice(insertIndex + 2, 0, { id: blockIdCounter++, type: 'text', content: '' })
+    }
+    
     successStore.showSuccess(i18n.locale === 'zh' ? '图片已插入' : 'Image inserted')
+    
+    // 聚焦到图片后的文本块
+    nextTick(() => {
+      const editables = document.querySelectorAll('.block-editable')
+      // 计算新文本块对应的 editable 索引
+      let editableIdx = 0
+      for (let i = 0; i <= insertIndex + 2 && i < contentBlocks.value.length; i++) {
+        if (contentBlocks.value[i].type === 'text') {
+          if (i === insertIndex + 2) break
+          editableIdx++
+        }
+      }
+      if (editables[editableIdx]) {
+        editables[editableIdx].focus()
+      }
+    })
   } catch (e) {
     errorStore.showError(e?.message || (i18n.locale === 'zh' ? '图片上传失败' : 'Image upload failed'))
   } finally {
     isUploadingContent.value = false
-    insertAfterIndex.value = -1
-    // 清空 input
     event.target.value = ''
   }
 }
 
-function autoResizeTextarea(event) {
-  const el = event.target
-  el.style.height = 'auto'
-  el.style.height = el.scrollHeight + 'px'
-}
-
-function handleEnterKey(event, blockIndex) {
-  // Shift+Enter 换行，Enter 创建新段落
-  if (!event.shiftKey) {
-    event.preventDefault()
-    insertTextBlockAfter(blockIndex)
-    // 聚焦新块
-    nextTick(() => {
-      const textareas = document.querySelectorAll('.block-textarea')
-      if (textareas[blockIndex + 1]) {
-        textareas[blockIndex + 1].focus()
+// 初始化编辑器内容
+function initEditorContent() {
+  nextTick(() => {
+    const editables = document.querySelectorAll('.block-editable')
+    let editableIndex = 0
+    contentBlocks.value.forEach((block) => {
+      if (block.type === 'text' && editables[editableIndex]) {
+        editables[editableIndex].innerHTML = block.content || ''
+        editableIndex++
       }
     })
-  }
+  })
 }
 
 const pageEnter = ref(false)
@@ -504,6 +724,16 @@ function resetDraft() {
   }
   coverImage.value = null
   contentBlocks.value = [{ id: blockIdCounter++, type: 'text', content: '' }]
+  // 清空 contenteditable 元素
+  nextTick(() => {
+    const editables = document.querySelectorAll('.block-editable')
+    editables.forEach(el => {
+      el.innerHTML = ''
+    })
+    if (editables[0]) {
+      editables[0].focus()
+    }
+  })
 }
 
 onMounted(() => {
@@ -551,12 +781,50 @@ watch(
 )
 
 // 从块生成内容数组（用于发布）
+// 将 HTML 转换为纯文本
+function htmlToText(html) {
+  if (!html) return ''
+  // 创建临时元素来解析 HTML
+  const temp = document.createElement('div')
+  temp.innerHTML = html
+  // 将 <br> 转换为换行
+  temp.querySelectorAll('br').forEach(br => br.replaceWith('\n'))
+  // 将 <div> 和 <p> 转换为换行
+  temp.querySelectorAll('div, p').forEach(el => {
+    el.prepend(document.createTextNode('\n'))
+  })
+  return temp.textContent?.trim() || ''
+}
+
+// 获取当前编辑器内容（实时从 DOM 读取）
+function getCurrentContent() {
+  const editables = document.querySelectorAll('.block-editable')
+  const result = []
+  let imageIndex = 0
+  let editableIndex = 0
+  
+  for (const block of contentBlocks.value) {
+    if (block.type === 'text') {
+      const el = editables[editableIndex]
+      const html = el ? el.innerHTML : block.content
+      const text = htmlToText(html)
+      if (text) result.push(text)
+      editableIndex++
+    } else if (block.type === 'image') {
+      result.push(`[IMAGE:${imageIndex}]`)
+      imageIndex++
+    }
+  }
+  return result
+}
+
 const contentParagraphs = computed(() => {
+  // 注意：这个计算属性可能不会实时更新，发布时使用 getCurrentContent()
   const result = []
   let imageIndex = 0
   for (const block of contentBlocks.value) {
     if (block.type === 'text') {
-      const text = String(block.content || '').trim()
+      const text = htmlToText(block.content)
       if (text) result.push(text)
     } else if (block.type === 'image') {
       result.push(`[IMAGE:${imageIndex}]`)
@@ -578,7 +846,7 @@ const contentImages = computed(() => {
     }))
 })
 
-const textBlockCount = computed(() => contentBlocks.value.filter(b => b.type === 'text' && b.content?.trim()).length)
+const textBlockCount = computed(() => contentBlocks.value.filter(b => b.type === 'text' && htmlToText(b.content)).length)
 const imageBlockCount = computed(() => contentBlocks.value.filter(b => b.type === 'image').length)
 const paragraphCount = computed(() => textBlockCount.value)
 
@@ -626,6 +894,9 @@ async function publish() {
     return
   }
 
+  // 先同步内容
+  syncAllContent()
+
   const payload = {
     slug: article.value.slug,
     category: article.value.category,
@@ -633,7 +904,7 @@ async function publish() {
     title: article.value.title,
     subtitle: article.value.subtitle,
     author: article.value.author,
-    content: contentParagraphs.value,
+    content: getCurrentContent(),
     // 添加图片信息
     cover_image: coverImage.value?.url || null,
     images: contentImages.value,
@@ -1312,84 +1583,98 @@ async function publish() {
   font-weight: 600;
 }
 
-/* 可视化块编辑器 */
-.visual-editor {
+/* 可视化块编辑器 - Word风格 */
+.word-editor {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 16px;
+  padding: 32px;
+  min-height: 400px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.editor-toolbar {
   display: flex;
-  flex-direction: column;
-  gap: 0;
-  min-height: 300px;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #ffffff;
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toolbar-btn:hover {
+  border-color: #000000;
+  color: #000000;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.toolbar-btn.uploading {
+  opacity: 0.5;
+  cursor: wait;
 }
 
 .editor-block {
   position: relative;
+  margin-bottom: 4px;
 }
 
-/* 文本块 */
+.editor-block--focused .block-editable {
+  background: rgba(0, 0, 0, 0.01);
+}
+
+/* 文本块 - contenteditable */
 .block-text {
   position: relative;
 }
 
-.block-textarea {
+.block-editable {
   width: 100%;
-  border: 1px solid transparent;
+  min-height: 1.8em;
   outline: none;
-  background: transparent;
-  resize: none;
   font-size: 18px;
-  line-height: 1.8;
+  line-height: 1.2;
   color: #000000;
-  padding: 12px 40px 12px 16px;
-  border-radius: 10px;
-  min-height: 60px;
-  transition: all 0.2s ease;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  border-radius: 8px;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
-.block-textarea:hover {
+.block-editable:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+.block-editable:hover {
   background: rgba(0, 0, 0, 0.02);
 }
 
-.block-textarea:focus {
-  background: #ffffff;
-  border-color: #000000;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
-}
-
-.block-textarea::placeholder {
-  color: rgba(0, 0, 0, 0.35);
-}
-
-.block-remove {
-  position: absolute;
-  top: 12px;
-  right: 8px;
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  color: rgba(0, 0, 0, 0.3);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: all 0.2s ease;
-}
-
-.block-text:hover .block-remove,
-.editor-block--image:hover .block-remove {
-  opacity: 1;
-}
-
-.block-remove:hover {
-  background: rgba(220, 38, 38, 0.1);
-  color: #dc2626;
+.block-editable:focus {
+  outline: none;
+  background: rgba(0, 0, 0, 0.03);
 }
 
 /* 图片块 */
 .block-image {
   position: relative;
-  margin: 8px 0;
+  margin: 16px 0;
   border-radius: 12px;
   overflow: hidden;
   background: #f5f5f5;
@@ -1397,74 +1682,36 @@ async function publish() {
 
 .block-image-preview {
   width: 100%;
-  max-height: 400px;
+  max-height: 500px;
   object-fit: contain;
   display: block;
 }
 
-
-
-.block-remove--image {
+.block-remove {
   position: absolute;
   top: 12px;
   right: 12px;
   width: 32px;
   height: 32px;
   border-radius: 50%;
+  border: none;
   background: rgba(0, 0, 0, 0.6);
   color: #ffffff;
-  opacity: 0;
-}
-
-.block-image:hover .block-remove--image {
-  opacity: 1;
-}
-
-.block-remove--image:hover {
-  background: #dc2626;
-  color: #ffffff;
-}
-
-/* 块之间的插入栏 */
-.block-insert-bar {
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 6px 0;
   opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.editor-block:hover .block-insert-bar,
-.block-insert-bar:focus-within {
-  opacity: 1;
-}
-
-.insert-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  background: #ffffff;
-  color: rgba(0, 0, 0, 0.6);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.insert-btn:hover {
-  border-color: #000000;
-  color: #000000;
-  background: #ffffff;
+.block-image:hover .block-remove {
+  opacity: 1;
 }
 
-.insert-btn.uploading {
-  opacity: 0.5;
-  cursor: wait;
+.block-remove:hover {
+  background: #dc2626;
+  transform: scale(1.1);
 }
 
 /* 空状态 */
@@ -1473,29 +1720,15 @@ async function publish() {
   align-items: center;
   justify-content: center;
   min-height: 200px;
-  border: 2px dashed rgba(0, 0, 0, 0.15);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.5);
+  cursor: text;
 }
 
-.empty-add-btn {
-  display: inline-flex;
+.empty-hint {
+  display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 24px;
-  border-radius: 999px;
-  border: 1px solid #000000;
-  background: #ffffff;
-  color: #000000;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.empty-add-btn:hover {
-  background: #000000;
-  color: #ffffff;
+  color: rgba(0, 0, 0, 0.35);
+  font-size: 16px;
 }
 </style>
 

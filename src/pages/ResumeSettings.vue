@@ -74,56 +74,53 @@
 
           <div class="divider"></div>
 
-          <!-- Resume visual editor -->
+          <!-- Resume visual editor - Word风格 -->
           <div class="content">
             <div class="section-label">{{ isZh ? '个人简历' : 'Resume' }}</div>
             
-            <div class="visual-editor">
-              <div v-for="(block, idx) in contentBlocks" :key="block.id" class="editor-block" :class="{ 'editor-block--image': block.type === 'image' }">
-                <!-- Text block -->
+            <!-- 工具栏 -->
+            <div class="editor-toolbar">
+              <label class="toolbar-btn" :class="{ uploading: isUploadingContent }">
+                <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="sr-only" :disabled="isUploadingContent" @change="handleInsertImageAtCursor($event)" />
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                  <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+                  <path d="M21 15l-5-5L5 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>{{ isUploadingContent ? (isZh ? '上传中...' : 'Uploading...') : (isZh ? '插入图片' : 'Insert Image') }}</span>
+              </label>
+            </div>
+            
+            <!-- Word风格编辑区 -->
+            <div class="word-editor" ref="wordEditorRef">
+              <div v-for="(block, idx) in contentBlocks" :key="block.id" class="editor-block" :class="{ 'editor-block--image': block.type === 'image', 'editor-block--focused': focusedBlockIndex === idx }">
+                <!-- Text block - contenteditable -->
                 <div v-if="block.type === 'text'" class="block-text">
-                  <textarea
-                    class="block-textarea"
-                    v-model="block.content"
-                    rows="3"
-                    :placeholder="isZh ? '输入内容...' : 'Write content...'"
-                    @input="autoResizeTextarea($event)"
-                    @keydown.enter="handleEnterKey($event, idx)"
-                  ></textarea>
-                  <button v-if="contentBlocks.length > 1" class="block-remove" type="button" @click="removeBlock(idx)" :title="isZh ? '删除' : 'Remove'">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                  </button>
+                  <div
+                    class="block-editable"
+                    contenteditable="true"
+                    :data-placeholder="isZh ? '输入内容...' : 'Start typing...'"
+                    :data-index="idx"
+                    @focus="focusedBlockIndex = idx"
+                    @blur="handleTextBlur($event, idx)"
+                    @keydown="handleKeyDown($event, idx)"
+                    @paste="handlePaste($event, idx)"
+                  ></div>
                 </div>
                 <!-- Image block -->
-                <div v-else-if="block.type === 'image'" class="block-image">
+                <div v-else-if="block.type === 'image'" class="block-image" @click="focusedBlockIndex = idx">
                   <img :src="block.url" alt="Image" class="block-image-preview" />
-                  <button class="block-remove block-remove--image" type="button" @click="removeBlock(idx)" :title="isZh ? '删除图片' : 'Remove image'">
+                  <button class="block-remove block-remove--image" type="button" @click.stop="removeBlock(idx)" :title="isZh ? '删除图片' : 'Remove image'">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                   </button>
                 </div>
-                <!-- Insert bar between blocks -->
-                <div class="block-insert-bar">
-                  <button class="insert-btn" type="button" @click="insertTextBlockAfter(idx)" :title="isZh ? '添加段落' : 'Add paragraph'">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                    <span>{{ isZh ? '段落' : 'Text' }}</span>
-                  </button>
-                  <label class="insert-btn" :class="{ uploading: isUploadingContent }">
-                    <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="sr-only" :disabled="isUploadingContent" @change="handleInsertImage($event, idx)" />
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                      <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/>
-                      <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
-                      <path d="M21 15l-5-5L5 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <span>{{ isUploadingContent ? (isZh ? '上传中...' : 'Uploading...') : (isZh ? '图片' : 'Image') }}</span>
-                  </label>
-                </div>
               </div>
               <!-- Empty state -->
-              <div v-if="contentBlocks.length === 0" class="editor-empty">
-                <button class="empty-add-btn" type="button" @click="addFirstTextBlock">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                  <span>{{ isZh ? '开始编写内容' : 'Start writing' }}</span>
-                </button>
+              <div v-if="contentBlocks.length === 0" class="editor-empty" @click="addFirstTextBlock">
+                <div class="empty-hint">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>{{ isZh ? '点击此处开始编写...' : 'Click here to start writing...' }}</span>
+                </div>
               </div>
             </div>
 
@@ -225,10 +222,27 @@ const contentBlocks = ref([{ id: blockIdCounter++, type: 'text', content: '' }])
 const isUploadingContent = ref(false)
 const insertAfterIndex = ref(-1)
 
+// Word editor related
+const wordEditorRef = ref(null)
+const textBlockRefs = ref([])
+const focusedBlockIndex = ref(0)
+
 // Track the next available position from database (max position + 1)
 const nextBioImagePosition = ref(0)
 
-const textBlockCount = computed(() => contentBlocks.value.filter(b => b.type === 'text' && b.content?.trim()).length)
+// 将 HTML 转换为纯文本
+function htmlToText(html) {
+  if (!html) return ''
+  const temp = document.createElement('div')
+  temp.innerHTML = html
+  temp.querySelectorAll('br').forEach(br => br.replaceWith('\n'))
+  temp.querySelectorAll('div, p').forEach(el => {
+    el.prepend(document.createTextNode('\n'))
+  })
+  return temp.textContent?.trim() || ''
+}
+
+const textBlockCount = computed(() => contentBlocks.value.filter(b => b.type === 'text' && htmlToText(b.content)).length)
 const imageBlockCount = computed(() => contentBlocks.value.filter(b => b.type === 'image').length)
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
@@ -267,36 +281,241 @@ async function handleAvatarUpload(event) {
   }
 }
 
-// Block editor operations
+// Word style editor operations
 function addFirstTextBlock() {
   contentBlocks.value.push({ id: blockIdCounter++, type: 'text', content: '' })
+  nextTick(() => {
+    const editables = document.querySelectorAll('.block-editable')
+    if (editables.length > 0) {
+      editables[editables.length - 1].focus()
+    }
+  })
 }
 
 function insertTextBlockAfter(index) {
   const newBlock = { id: blockIdCounter++, type: 'text', content: '' }
   contentBlocks.value.splice(index + 1, 0, newBlock)
+  nextTick(() => {
+    const editables = document.querySelectorAll('.block-editable')
+    if (editables[index + 1]) {
+      editables[index + 1].focus()
+    }
+  })
 }
 
 function removeBlock(index) {
   if (contentBlocks.value.length <= 1 && contentBlocks.value[0].type === 'text') {
     contentBlocks.value[0].content = ''
+    nextTick(() => {
+      const editables = document.querySelectorAll('.block-editable')
+      if (editables[0]) {
+        editables[0].innerHTML = ''
+        editables[0].focus()
+      }
+    })
     return
   }
   contentBlocks.value.splice(index, 1)
+  nextTick(() => {
+    const editables = document.querySelectorAll('.block-editable')
+    const targetIdx = Math.min(index, editables.length - 1)
+    if (editables[targetIdx]) {
+      editables[targetIdx].focus()
+    }
+  })
 }
 
-async function handleInsertImage(event, afterIndex) {
+// 同步所有编辑器内容到数据
+function syncAllContent() {
+  const editables = document.querySelectorAll('.block-editable')
+  let editableIndex = 0
+  contentBlocks.value.forEach((block) => {
+    if (block.type === 'text') {
+      if (editables[editableIndex]) {
+        block.content = editables[editableIndex].innerHTML
+      }
+      editableIndex++
+    }
+  })
+}
+
+// Handle blur - save content
+function handleTextBlur(event, index) {
+  const el = event.target
+  contentBlocks.value[index].content = el.innerHTML
+}
+
+// Handle keyboard events
+function handleKeyDown(event, index) {
+  const el = event.target
+  
+  // Enter creates new paragraph (not Shift+Enter)
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault()
+    
+    // Save current content
+    syncAllContent()
+    
+    const selection = window.getSelection()
+    if (!selection.rangeCount) return
+    const range = selection.getRangeAt(0)
+    
+    // Get content after cursor
+    const afterRange = range.cloneRange()
+    afterRange.selectNodeContents(el)
+    afterRange.setStart(range.endContainer, range.endOffset)
+    const afterContent = afterRange.cloneContents()
+    
+    const tempDiv = document.createElement('div')
+    tempDiv.appendChild(afterContent)
+    const afterHtml = tempDiv.innerHTML
+    
+    // Delete content after cursor
+    afterRange.deleteContents()
+    
+    // Update current block
+    contentBlocks.value[index].content = el.innerHTML
+    
+    // Create new block with content after cursor
+    const newBlock = { id: blockIdCounter++, type: 'text', content: afterHtml }
+    contentBlocks.value.splice(index + 1, 0, newBlock)
+    
+    // Focus new block and set content
+    nextTick(() => {
+      const editables = document.querySelectorAll('.block-editable')
+      const newEl = editables[index + 1]
+      if (newEl) {
+        newEl.innerHTML = afterHtml
+        newEl.focus()
+        const newSelection = window.getSelection()
+        const newRange = document.createRange()
+        newRange.selectNodeContents(newEl)
+        newRange.collapse(true)
+        newSelection.removeAllRanges()
+        newSelection.addRange(newRange)
+      }
+    })
+    return
+  }
+  
+  // Backspace at block start merges with previous
+  if (event.key === 'Backspace') {
+    const selection = window.getSelection()
+    if (!selection.rangeCount) return
+    const range = selection.getRangeAt(0)
+    
+    if (!range.collapsed) return
+    
+    const isAtVeryStart = (function() {
+      if (range.startOffset !== 0) return false
+      
+      let node = range.startContainer
+      while (node && node !== el) {
+        if (node.previousSibling) return false
+        node = node.parentNode
+      }
+      return true
+    })()
+    
+    if (isAtVeryStart && index > 0) {
+      event.preventDefault()
+      
+      syncAllContent()
+      
+      let prevTextIndex = -1
+      let prevEditableIndex = -1
+      let editableCount = 0
+      for (let i = 0; i < index; i++) {
+        if (contentBlocks.value[i].type === 'text') {
+          prevTextIndex = i
+          prevEditableIndex = editableCount
+          editableCount++
+        }
+      }
+      
+      if (prevTextIndex >= 0) {
+        const currentContent = el.innerHTML
+        const prevBlock = contentBlocks.value[prevTextIndex]
+        const prevContent = prevBlock.content || ''
+        
+        prevBlock.content = prevContent + currentContent
+        contentBlocks.value.splice(index, 1)
+        
+        nextTick(() => {
+          const editables = document.querySelectorAll('.block-editable')
+          const targetEl = editables[prevEditableIndex]
+          if (targetEl) {
+            targetEl.innerHTML = prevBlock.content
+            targetEl.focus()
+            
+            const newSelection = window.getSelection()
+            const newRange = document.createRange()
+            
+            try {
+              let charCount = 0
+              let targetNode = null
+              let targetOffset = 0
+              const mergePoint = prevContent.replace(/<[^>]*>/g, '').length
+              
+              const walker = document.createTreeWalker(targetEl, NodeFilter.SHOW_TEXT, null, false)
+              while (walker.nextNode()) {
+                const textNode = walker.currentNode
+                if (charCount + textNode.length >= mergePoint) {
+                  targetNode = textNode
+                  targetOffset = mergePoint - charCount
+                  break
+                }
+                charCount += textNode.length
+              }
+              
+              if (targetNode) {
+                newRange.setStart(targetNode, Math.min(targetOffset, targetNode.length))
+              } else {
+                newRange.selectNodeContents(targetEl)
+                newRange.collapse(false)
+              }
+              newRange.collapse(true)
+              newSelection.removeAllRanges()
+              newSelection.addRange(newRange)
+            } catch (e) {
+              newRange.selectNodeContents(targetEl)
+              newRange.collapse(false)
+              newSelection.removeAllRanges()
+              newSelection.addRange(newRange)
+            }
+          }
+        })
+      }
+    }
+  }
+}
+
+// Handle paste
+function handlePaste(event, index) {
+  event.preventDefault()
+  const text = event.clipboardData.getData('text/plain')
+  document.execCommand('insertText', false, text)
+}
+
+// Insert image at cursor position
+async function handleInsertImageAtCursor(event) {
   const file = event?.target?.files?.[0]
   if (!file) return
   const validation = validateImageFile(file)
   if (!validation.valid) {
     warningStore.showWarning(validation.error)
+    event.target.value = ''
     return
   }
+  
+  // Sync content first
+  syncAllContent()
+  
   isUploadingContent.value = true
-  insertAfterIndex.value = afterIndex
+  
+  const insertIndex = focusedBlockIndex.value >= 0 ? focusedBlockIndex.value : contentBlocks.value.length - 1
+  
   try {
-    // Use the next available position from database, not current page image count
     const displayOrder = nextBioImagePosition.value
     const result = await uploadUserImage({ file, imageType: 'bio', caption: '', displayOrder })
     const imageUrl = result.url || ''
@@ -304,39 +523,52 @@ async function handleInsertImage(event, afterIndex) {
       console.warn('Upload result:', result)
       throw new Error('No image URL in response')
     }
-    // Use the position returned from server, or fallback to displayOrder we sent
     const actualPosition = result.display_order ?? result.position ?? displayOrder
     const newBlock = { id: blockIdCounter++, type: 'image', url: imageUrl, position: actualPosition }
-    contentBlocks.value.splice(afterIndex + 1, 0, newBlock)
-    // Increment next position for future uploads
+    contentBlocks.value.splice(insertIndex + 1, 0, newBlock)
     nextBioImagePosition.value = actualPosition + 1
+    
+    // Add empty text block after image if needed
+    if (insertIndex + 2 >= contentBlocks.value.length || contentBlocks.value[insertIndex + 2]?.type !== 'text') {
+      contentBlocks.value.splice(insertIndex + 2, 0, { id: blockIdCounter++, type: 'text', content: '' })
+    }
+    
     successStore.showSuccess(isZh.value ? '图片已插入' : 'Image inserted')
+    
+    // Focus text block after image
+    nextTick(() => {
+      const editables = document.querySelectorAll('.block-editable')
+      let editableIdx = 0
+      for (let i = 0; i <= insertIndex + 2 && i < contentBlocks.value.length; i++) {
+        if (contentBlocks.value[i].type === 'text') {
+          if (i === insertIndex + 2) break
+          editableIdx++
+        }
+      }
+      if (editables[editableIdx]) {
+        editables[editableIdx].focus()
+      }
+    })
   } catch (e) {
     errorStore.showError(isZh.value ? `图片上传失败：${e?.message || e}` : `Image upload failed: ${e?.message || e}`)
   } finally {
     isUploadingContent.value = false
-    insertAfterIndex.value = -1
     event.target.value = ''
   }
 }
 
-function autoResizeTextarea(event) {
-  const el = event.target
-  el.style.height = 'auto'
-  el.style.height = el.scrollHeight + 'px'
-}
-
-function handleEnterKey(event, blockIndex) {
-  // Ctrl+Enter or Cmd+Enter to create new block, regular Enter for newline
-  if (event.ctrlKey || event.metaKey) {
-    event.preventDefault()
-    insertTextBlockAfter(blockIndex)
-    nextTick(() => {
-      const textareas = document.querySelectorAll('.block-textarea')
-      if (textareas[blockIndex + 1]) textareas[blockIndex + 1].focus()
+// 初始化编辑器内容
+function initEditorContent() {
+  nextTick(() => {
+    const editables = document.querySelectorAll('.block-editable')
+    let editableIndex = 0
+    contentBlocks.value.forEach((block) => {
+      if (block.type === 'text' && editables[editableIndex]) {
+        editables[editableIndex].innerHTML = block.content || ''
+        editableIndex++
+      }
     })
-  }
-  // Regular Enter allows normal newline in textarea
+  })
 }
 
 function applyResumeToForm(r) {
@@ -383,6 +615,9 @@ function applyResumeToForm(r) {
     // No bio content, reset to empty text block
     contentBlocks.value = [{ id: blockIdCounter++, type: 'text', content: '' }]
   }
+  
+  // 初始化编辑器内容
+  initEditorContent()
 }
 
 async function loadResume() {
@@ -408,10 +643,13 @@ async function loadAll() {
 }
 
 function buildBioArray() {
+  // 先同步内容
+  syncAllContent()
+  
   const out = []
   for (const block of contentBlocks.value) {
     if (block.type === 'text') {
-      const text = String(block.content || '').trim()
+      const text = htmlToText(block.content)
       if (text) out.push(text)
     } else if (block.type === 'image') {
       // Use the actual position stored in the block (from database)
@@ -552,34 +790,118 @@ onMounted(async () => {
 .info-control:focus { border-bottom-color: #000000; }
 .info-control::placeholder { color: rgba(0, 0, 0, 0.3); }
 
-/* Visual editor */
-.visual-editor { background: rgba(250, 250, 250, 0.8); border-radius: 20px; border: 1px solid rgba(0, 0, 0, 0.06); padding: 28px; }
+/* Visual editor - Word style */
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
 
-.editor-block { position: relative; margin-bottom: 12px; }
+.toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #ffffff;
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toolbar-btn:hover {
+  border-color: #000000;
+  color: #000000;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.toolbar-btn.uploading {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.word-editor {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 16px;
+  padding: 32px;
+  min-height: 400px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.editor-block { position: relative; margin-bottom: 4px; }
 .editor-block--image { margin-bottom: 20px; }
+.editor-block--focused .block-editable { background: rgba(0, 0, 0, 0.01); }
 
 .block-text { position: relative; }
-.block-textarea { width: 100%; border: none; outline: none; background: transparent; resize: none; font-size: 20px; line-height: 1.9; color: #000000; padding: 16px 48px 16px 0; min-height: 80px; }
-.block-textarea::placeholder { color: rgba(0, 0, 0, 0.3); }
-.block-remove { position: absolute; top: 16px; right: 0; width: 32px; height: 32px; border-radius: 999px; background: transparent; border: 1px solid rgba(0, 0, 0, 0.1); color: rgba(0, 0, 0, 0.4); cursor: pointer; display: grid; place-items: center; opacity: 0; transition: all 0.15s ease; }
-.block-text:hover .block-remove { opacity: 1; }
-.block-remove:hover { background: rgba(220, 38, 38, 0.1); border-color: rgba(220, 38, 38, 0.3); color: rgba(220, 38, 38, 0.8); }
 
-.block-image { position: relative; border-radius: 16px; overflow: hidden; }
+.block-editable {
+  width: 100%;
+  min-height: 1.8em;
+  outline: none;
+  font-size: 20px;
+  line-height: 1.2;
+  color: #000000;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.block-editable:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+.block-editable:focus {
+  outline: none;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.block-image { position: relative; margin: 16px 0; border-radius: 16px; overflow: hidden; }
 .block-image-preview { width: 100%; height: auto; display: block; }
-.block-remove--image { position: absolute; top: 16px; right: 16px; width: 36px; height: 36px; background: rgba(0, 0, 0, 0.6); border: none; opacity: 0; }
-.block-image:hover .block-remove--image { opacity: 1; }
-.block-remove--image:hover { background: rgba(220, 38, 38, 0.9); }
 
-.block-insert-bar { display: flex; gap: 10px; padding: 12px 0; opacity: 0; transition: opacity 0.15s ease; }
-.editor-block:hover .block-insert-bar { opacity: 1; }
-.insert-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px; border: 1px dashed rgba(0, 0, 0, 0.15); background: transparent; color: rgba(0, 0, 0, 0.5); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; }
-.insert-btn:hover { border-color: rgba(0, 0, 0, 0.3); color: rgba(0, 0, 0, 0.7); background: rgba(0, 0, 0, 0.02); }
-.insert-btn.uploading { pointer-events: none; opacity: 0.6; }
+.block-remove {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: all 0.15s ease;
+}
 
-.editor-empty { padding: 48px; text-align: center; }
-.empty-add-btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px; border-radius: 999px; border: 1px dashed rgba(0, 0, 0, 0.2); background: transparent; color: rgba(0, 0, 0, 0.5); font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; }
-.empty-add-btn:hover { border-color: rgba(0, 0, 0, 0.4); color: rgba(0, 0, 0, 0.7); background: rgba(0, 0, 0, 0.02); }
+.block-image:hover .block-remove { opacity: 1; }
+.block-remove:hover { background: rgba(220, 38, 38, 0.9); }
+
+.editor-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  cursor: text;
+}
+
+.empty-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(0, 0, 0, 0.35);
+  font-size: 16px;
+}
 
 .content-footer { margin-top: 16px; }
 .content-hint { font-size: 14px; color: rgba(0, 0, 0, 0.45); }

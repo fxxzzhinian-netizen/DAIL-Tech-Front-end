@@ -19,9 +19,16 @@
           <div class="detail">
             <header class="hero">
               <div class="avatar-section">
-                <div class="avatar-circle">
-                  <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" />
+                <div class="avatar-circle" :class="{ 'avatar-loading': avatarUrl && !avatarLoaded }">
+                  <img 
+                    v-if="avatarUrl" 
+                    :src="avatarUrl" 
+                    alt="avatar"
+                    loading="eager"
+                    @load="onAvatarLoad"
+                  />
                   <div v-else class="avatar-letter">{{ avatarLetter }}</div>
+                  <div class="avatar-skeleton"></div>
                 </div>
               </div>
               <h1 class="hero-title">{{ resume.real_name || (isZh ? '未设置' : 'Not set') }}</h1>
@@ -66,7 +73,16 @@
                 <div class="bio-blocks">
                   <template v-for="(block, idx) in bioContent" :key="idx">
                     <p v-if="block.type === 'text'" class="bio-text">{{ block.content }}</p>
-                    <img v-else-if="block.type === 'image'" :src="block.url" alt="Bio image" class="bio-image" />
+                    <div v-else-if="block.type === 'image'" class="bio-image-wrapper" :class="{ 'image-loading': !isBioImageLoaded(block.url) }">
+                      <img 
+                        :src="block.url" 
+                        alt="Bio image" 
+                        class="bio-image"
+                        loading="lazy"
+                        @load="onBioImageLoad(block.url)"
+                      />
+                      <div class="image-skeleton"></div>
+                    </div>
                   </template>
                 </div>
               </div>
@@ -96,6 +112,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18nStore } from '@/stores/i18n'
 import { getPublicResume } from '@/services/resumeService'
+import { preloadImagesInBackground } from '@/utils/imagePreloader'
 
 const router = useRouter()
 const route = useRoute()
@@ -106,6 +123,8 @@ const pageEnter = ref(false)
 const isLoading = ref(true)
 const errorMsg = ref('')
 const resume = ref(null)
+const avatarLoaded = ref(false)
+const loadedImages = ref(new Set())
 
 const avatarUrl = computed(() => {
   const r = resume.value
@@ -116,6 +135,21 @@ const avatarLetter = computed(() => {
   const s = String(resume.value?.real_name || 'U').trim()
   return (s[0] || 'U').toUpperCase()
 })
+
+// 头像加载完成
+function onAvatarLoad() {
+  avatarLoaded.value = true
+}
+
+// Bio图片加载完成
+function onBioImageLoad(url) {
+  loadedImages.value.add(url)
+}
+
+// 检查Bio图片是否已加载
+function isBioImageLoaded(url) {
+  return loadedImages.value.has(url)
+}
 
 // Parse bio content with images
 const bioContent = computed(() => {
@@ -157,6 +191,20 @@ async function loadResume() {
       errorMsg.value = isZh.value ? '简历不存在或未公开' : 'Resume not found or private'
     } else {
       resume.value = data
+      
+      // 数据加载完成后，立即预加载所有图片
+      const imagesToPreload = []
+      const avatar = data.avatar_url || data.avatarUrl || data.avatar
+      if (avatar) imagesToPreload.push(avatar)
+      
+      // 预加载bio中的图片
+      const bioImages = Array.isArray(data.bio_images) ? data.bio_images : []
+      bioImages.forEach(img => {
+        const url = img.url || img.image_url
+        if (url) imagesToPreload.push(url)
+      })
+      
+      preloadImagesInBackground(imagesToPreload)
     }
   } catch (e) {
     if (e?.status === 404) {
@@ -224,8 +272,39 @@ onMounted(() => {
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2);
   display: grid;
   place-items: center;
+  position: relative;
 }
-.avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-circle img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover;
+  opacity: 1;
+  transition: opacity 0.4s ease;
+}
+.avatar-circle.avatar-loading img {
+  opacity: 0;
+}
+
+/* 头像骨架屏 */
+.avatar-skeleton {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: 999px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.avatar-circle.avatar-loading .avatar-skeleton {
+  opacity: 1;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 .avatar-letter {
   width: 100%;
   height: 100%;
@@ -280,7 +359,39 @@ onMounted(() => {
 /* Bio blocks */
 .bio-blocks { display: flex; flex-direction: column; gap: 28px; }
 .bio-text { font-size: 20px; line-height: 1.9; color: #000000; margin: 0; }
-.bio-image { width: 100%; height: auto; border-radius: 16px; }
+
+/* Bio图片包装器 */
+.bio-image-wrapper {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #f3f4f6;
+  min-height: 200px;
+}
+.bio-image { 
+  width: 100%; 
+  height: auto; 
+  display: block;
+  opacity: 1;
+  transition: opacity 0.4s ease;
+}
+.bio-image-wrapper.image-loading .bio-image {
+  opacity: 0;
+}
+
+/* 图片骨架屏 */
+.image-skeleton {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.bio-image-wrapper.image-loading .image-skeleton {
+  opacity: 1;
+}
 
 /* Bottom bar */
 .bottom-bar {
