@@ -69,10 +69,9 @@
         <div class="col">
           <p class="col-title">{{ $t('footer.solutionsTitle') }}</p>
           <ul>
-            <li>{{ $t('footer.solutions1') }}</li>
-            <li>{{ $t('footer.solutions2') }}</li>
-            <li>{{ $t('footer.solutions3') }}</li>
-            <li>{{ $t('footer.solutions4') }}</li>
+            <li @click="$router.push('/coming-soon')">{{ $t('footer.solutions1') }}</li>
+            <li @click="$router.push('/coming-soon')">{{ $t('footer.solutions2') }}</li>
+            <li @click="$router.push('/coming-soon')">{{ $t('footer.solutions3') }}</li>
           </ul>
         </div>
   
@@ -80,9 +79,9 @@
         <div class="col">
           <p class="col-title">{{ $t('footer.technologyTitle') }}</p>
           <ul>
-            <li>{{ $t('footer.technology1') }}</li>
-            <li>{{ $t('footer.technology2') }}</li>
-            <li>{{ $t('footer.technology3') }}</li>
+            <li @click="$router.push('/coming-soon')">{{ $t('footer.technology1') }}</li>
+            <li @click="$router.push('/coming-soon')">{{ $t('footer.technology2') }}</li>
+            <li @click="$router.push('/coming-soon')">{{ $t('footer.technology3') }}</li>
           </ul>
         </div>
   
@@ -90,21 +89,20 @@
         <div class="col">
           <p class="col-title">{{ $t('footer.companyTitle') }}</p>
           <ul>
-            <li>{{ $t('footer.company1') }}</li>
-            <li>{{ $t('footer.company2') }}</li>
-            <li>{{ $t('footer.company3') }}</li>
-            <li>{{ $t('footer.company4') }}</li>
+            <li @click="$router.push('/about')">{{ $t('footer.company1') }}</li>
+            <li @click="$router.push('/team')">{{ $t('footer.company2') }}</li>
+            <li @click="$router.push('/career')">{{ $t('footer.company3') }}</li>
+            <li @click="$router.push('/news')">{{ $t('footer.company4') }}</li>
           </ul>
         </div>
   
-        <!-- Legal -->
+        <!-- Docs -->
         <div class="col">
-          <p class="col-title">{{ $t('footer.legalTitle') }}</p>
+          <p class="col-title">{{ $t('footer.docsTitle') }}</p>
           <ul>
-            <li>{{ $t('footer.legal1') }}</li>
-            <li>{{ $t('footer.legal2') }}</li>
-            <li>{{ $t('footer.legal3') }}</li>
-            <li>{{ $t('footer.legal4') }}</li>
+            <li @click="$router.push('/coming-soon')">{{ $t('footer.docs1') }}</li>
+            <li @click="$router.push('/coming-soon')">{{ $t('footer.docs2') }}</li>
+            <li @click="$router.push('/coming-soon')">{{ $t('footer.docs3') }}</li>
           </ul>
         </div>
       </div>
@@ -205,7 +203,7 @@
   /* 主体内容五列 */
   .footer-grid {
     display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr 0.6fr 1fr;
+    grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr;
     gap: 40px;
     margin-bottom: 40px;
   }

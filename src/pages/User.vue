@@ -41,16 +41,29 @@
             </button>
 
             <button
+              v-if="canPublishNews"
               class="nav-item float-in"
               :style="{ '--d': '200ms' }"
               :class="{ active: activeTab === 'news', animate: isMounted }"
               type="button"
-              :disabled="!canPublishNews"
-              :title="!canPublishNews ? t('user.newsNoAccessText') : ''"
               @click="activeTab = 'news'"
             >
               <span class="nav-text">{{ t('user.navNews') }}</span>
               <span class="nav-desc">{{ t('user.navNewsDesc') }}</span>
+            </button>
+
+            <button
+              class="nav-item float-in"
+              :style="{ '--d': '260ms' }"
+              :class="{ active: activeTab === 'messages', animate: isMounted }"
+              type="button"
+              @click="activeTab = 'messages'; loadMessages()"
+            >
+              <span class="nav-text">
+                {{ t('messages.navMessages') }}
+                <span v-if="unreadCount > 0" class="nav-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+              </span>
+              <span class="nav-desc">{{ t('messages.navMessagesDesc') }}</span>
             </button>
           </nav>
   
@@ -72,22 +85,32 @@
                   </div>
                 </div>
 
-                <!-- 2: Progress -->
-                <div class="stepper-step is-active float-in" :style="{ '--d': '300ms' }" :class="{ animate: isMounted }">
-                  <div class="stepper-circle" aria-hidden="true">2</div>
+                <!-- 2: Profile Updated -->
+                <div class="stepper-step float-in" :style="{ '--d': '300ms' }" :class="{ animate: isMounted, 'is-done': hasUpdatedProfile, 'is-pending': !hasUpdatedProfile }">
+                  <div class="stepper-circle" aria-hidden="true">
+                    <svg v-if="hasUpdatedProfile" viewBox="0 0 16 16" fill="currentColor" width="14" height="14" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"></path>
+                    </svg>
+                    <span v-else>2</span>
+                  </div>
                   <div class="stepper-line"></div>
                   <div class="stepper-content">
                     <div class="stepper-title">{{ t('user.stepProgress') }}</div>
-                    <div class="stepper-sub">{{ t('user.progressDaysInDail', { days: daysInDAIL }) }}</div>
+                    <div class="stepper-sub">{{ hasUpdatedProfile ? (i18n.locale === 'zh' ? '已更新个人资料' : 'Profile updated') : (i18n.locale === 'zh' ? '请完善个人资料' : 'Please update profile') }}</div>
                   </div>
                 </div>
 
-                <!-- 3: Dominate -->
-                <div class="stepper-step is-pending float-in" :style="{ '--d': '360ms' }" :class="{ animate: isMounted }">
-                  <div class="stepper-circle" aria-hidden="true">3</div>
+                <!-- 3: Resume Updated -->
+                <div class="stepper-step float-in" :style="{ '--d': '360ms' }" :class="{ animate: isMounted, 'is-done': hasUpdatedResume, 'is-pending': !hasUpdatedResume }">
+                  <div class="stepper-circle" aria-hidden="true">
+                    <svg v-if="hasUpdatedResume" viewBox="0 0 16 16" fill="currentColor" width="14" height="14" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"></path>
+                    </svg>
+                    <span v-else>3</span>
+                  </div>
                   <div class="stepper-content">
                     <div class="stepper-title">{{ t('user.stepDominate') }}</div>
-                    <div class="stepper-sub">{{ t('user.navDominateDesc') }}</div>
+                    <div class="stepper-sub">{{ hasUpdatedResume ? (i18n.locale === 'zh' ? '已更新履历' : 'Resume updated') : t('user.navDominateDesc') }}</div>
                   </div>
               </div>
               </div>
@@ -337,13 +360,12 @@
 
               <!-- Browse All Users -->
               <button
+                v-if="isAdmin"
                 class="info-card info-card--action float-in"
                 :style="{ '--d': '280ms' }"
-                :class="{ animate: contentAnimate, 'info-card--disabled': !isAdmin }"
+                :class="{ animate: contentAnimate }"
                 type="button"
-                :disabled="!isAdmin"
-                :title="!isAdmin ? (i18n.locale === 'zh' ? '仅管理员可访问' : 'Admin only') : ''"
-                @click="isAdmin && router.push({ name: 'user-list' })"
+                @click="router.push({ name: 'user-list' })"
               >
                 <div class="info-icon" aria-hidden="true">
                   <!-- users -->
@@ -357,19 +379,80 @@
 
                 <div class="info-body">
                   <div class="info-title">{{ i18n.locale === 'zh' ? '查询所有用户' : 'Browse All Users' }}</div>
-                  <div class="info-sub">{{ !isAdmin ? (i18n.locale === 'zh' ? '仅管理员可访问此功能' : 'Admin access required') : (i18n.locale === 'zh' ? '查看平台所有注册用户的公开信息与简历。' : 'View public profiles and resumes of all registered users.') }}</div>
+                  <div class="info-sub">{{ i18n.locale === 'zh' ? '查看平台所有注册用户的公开信息与简历。' : 'View public profiles and resumes of all registered users.' }}</div>
                 </div>
 
                 <div class="info-action" aria-hidden="true">
                   <span class="info-action-badge" :title="i18n.locale === 'zh' ? '进入' : 'Open'">
-                    <!-- arrow-right or lock -->
-                    <svg v-if="isAdmin" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <!-- arrow-right -->
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M5 12h14"></path>
                       <path d="m13 5 7 7-7 7"></path>
                     </svg>
-                    <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </span>
+                </div>
+              </button>
+
+              <!-- Intern Applications Management -->
+              <button
+                v-if="isAdmin"
+                class="info-card info-card--action float-in"
+                :style="{ '--d': '340ms' }"
+                :class="{ animate: contentAnimate }"
+                type="button"
+                @click="router.push({ name: 'intern-manage' })"
+              >
+                <div class="info-icon" aria-hidden="true">
+                  <!-- clipboard-list -->
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                    <path d="M9 12h6"></path>
+                    <path d="M9 16h6"></path>
+                  </svg>
+                </div>
+
+                <div class="info-body">
+                  <div class="info-title">{{ i18n.locale === 'zh' ? '实习生申请管理' : 'Intern Applications' }}</div>
+                  <div class="info-sub">{{ i18n.locale === 'zh' ? '查看、审批或拒绝实习生的报名申请。' : 'Review, approve or reject intern applications.' }}</div>
+                </div>
+
+                <div class="info-action" aria-hidden="true">
+                  <span class="info-action-badge" :title="i18n.locale === 'zh' ? '进入' : 'Open'">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M5 12h14"></path>
+                      <path d="m13 5 7 7-7 7"></path>
+                    </svg>
+                  </span>
+                </div>
+              </button>
+
+              <!-- Broadcast Message (Admin only) -->
+              <button
+                v-if="isAdmin"
+                class="info-card info-card--action float-in"
+                :style="{ '--d': '400ms' }"
+                :class="{ animate: contentAnimate }"
+                type="button"
+                @click="router.push({ name: 'broadcast-message' })"
+              >
+                <div class="info-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 2 11 13"/>
+                    <path d="M22 2 15 22 11 13 2 9 22 2"/>
+                  </svg>
+                </div>
+
+                <div class="info-body">
+                  <div class="info-title">{{ i18n.locale === 'zh' ? '群发系统消息' : 'Broadcast Message' }}</div>
+                  <div class="info-sub">{{ i18n.locale === 'zh' ? '向多个用户发送系统通知，支持按角色群发或指定用户。' : 'Send system notifications to multiple users by role or specific IDs.' }}</div>
+                </div>
+
+                <div class="info-action" aria-hidden="true">
+                  <span class="info-action-badge" :title="i18n.locale === 'zh' ? '打开' : 'Open'">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M5 12h14"></path>
+                      <path d="m13 5 7 7-7 7"></path>
                     </svg>
                   </span>
                 </div>
@@ -378,7 +461,7 @@
           </section>
 
           <!-- News -->
-          <section v-else class="panel panel--news">
+          <section v-else-if="activeTab === 'news'" class="panel panel--news">
             <div v-if="!canPublishNews" class="placeholder">
               <div class="placeholder-title">{{ t('user.newsNoAccessTitle') }}</div>
               <div class="placeholder-text">{{ t('user.newsNoAccessText') }}</div>
@@ -435,40 +518,157 @@
                 </div>
             </div>
           </section>
+
+          <!-- Messages -->
+          <section v-else class="panel panel--messages">
+            <!-- Filter Tabs -->
+            <div class="msg-filter-tabs float-in" :class="{ animate: contentAnimate }" :style="{ '--d': '120ms' }">
+              <button 
+                class="msg-filter-tab" 
+                :class="{ active: msgFilter === 'all' }"
+                @click="msgFilter = 'all'; loadMessages()"
+              >
+                {{ t('messages.all') }}
+              </button>
+              <button 
+                class="msg-filter-tab" 
+                :class="{ active: msgFilter === 'unread' }"
+                @click="msgFilter = 'unread'; loadMessages()"
+              >
+                {{ t('messages.unread') }}
+                <span v-if="unreadCount > 0" class="msg-filter-badge">{{ unreadCount }}</span>
+              </button>
+            </div>
+
+            <!-- Loading -->
+            <div v-if="isLoadingMessages" class="msg-loading float-in" :class="{ animate: contentAnimate }" :style="{ '--d': '180ms' }">
+              <div class="msg-spinner"></div>
+              <span>{{ t('messages.loading') }}</span>
+            </div>
+
+            <!-- Empty State -->
+            <div v-else-if="messages.length === 0" class="msg-empty float-in" :class="{ animate: contentAnimate }" :style="{ '--d': '180ms' }">
+              <div class="msg-empty-icon">
+                <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+              </div>
+              <div class="msg-empty-title">{{ t('messages.empty') }}</div>
+              <div class="msg-empty-desc">{{ t('messages.emptyDesc') }}</div>
+            </div>
+
+            <!-- Messages List -->
+            <div v-else class="msg-list">
+              <div 
+                v-for="(msg, idx) in messages" 
+                :key="msg.id" 
+                class="msg-item"
+                :class="{ 
+                  'msg-item--unread': !msg.read_at,
+                  'msg-item--read': msg.read_at,
+                  'msg-item--ready': messagesReady
+                }"
+                :style="{ '--idx': idx }"
+                @click="openMessageDetail(msg)"
+              >
+                <div class="msg-item-indicator" :class="{ 'msg-item-indicator--read': msg.read_at }"></div>
+                <div class="msg-item-content">
+                  <div class="msg-item-header">
+                    <div class="msg-item-title">{{ msg.title }}</div>
+                    <div class="msg-item-time">{{ formatMsgTime(msg.created_at) }}</div>
+                  </div>
+                  <div class="msg-item-body">{{ msg.content }}</div>
+                  <div class="msg-item-footer">
+                    <div class="msg-item-actions">
+                      <button 
+                        v-if="!msg.read_at" 
+                        class="msg-item-action"
+                        :disabled="markingReadId === msg.id"
+                        @click.stop="markAsRead(msg.id)"
+                      >
+                        {{ markingReadId === msg.id ? '...' : t('messages.markRead') }}
+                      </button>
+                      <div v-else class="msg-item-read">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        {{ t('messages.read') }}
+                      </div>
+                    </div>
+                    <button 
+                      class="msg-item-delete"
+                      :disabled="deletingMsgId === msg.id"
+                      @click.stop="deleteMessage(msg.id)"
+                      :title="t('messages.delete')"
+                    >
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18"/>
+                        <path d="M8 6V4h8v2"/>
+                        <path d="M6 6l1 14h10l1-14"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Message Detail Modal -->
+            <div v-if="isMessageDetailOpen" class="modal-layer" role="dialog" aria-modal="true" @keydown.esc.prevent="closeMessageDetail">
+              <div class="modal-backdrop" @click="closeMessageDetail" aria-hidden="true"></div>
+              <div class="modal msg-detail-modal" @click.stop>
+                <div class="modal-header">
+                  <div class="modal-title">{{ selectedMessage?.title || (i18n.locale === 'zh' ? '消息详情' : 'Message Detail') }}</div>
+                  <button type="button" class="modal-close" @click="closeMessageDetail">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 6 6 18" />
+                      <path d="M6 6 18 18" />
+                    </svg>
+                  </button>
+                </div>
+                <div class="modal-body msg-detail-body">
+                  <div class="msg-detail-meta">
+                    <span class="msg-detail-time">{{ selectedMessage ? formatMsgTime(selectedMessage.created_at) : '' }}</span>
+                    <span v-if="selectedMessage?.read_at" class="msg-detail-status msg-detail-status--read">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      {{ t('messages.read') }}
+                    </span>
+                    <span v-else class="msg-detail-status msg-detail-status--unread">{{ t('messages.unread') }}</span>
+                  </div>
+                  <div class="msg-detail-content">{{ selectedMessage?.content }}</div>
+                </div>
+                <div class="modal-footer msg-detail-footer">
+                  <button 
+                    v-if="selectedMessage && !selectedMessage.read_at" 
+                    class="btn btn--primary"
+                    :disabled="markingReadId === selectedMessage?.id"
+                    @click="markAsReadAndClose(selectedMessage.id)"
+                  >
+                    {{ markingReadId === selectedMessage?.id ? '...' : t('messages.markRead') }}
+                  </button>
+                  <button class="btn btn--ghost" @click="closeMessageDetail">
+                    {{ i18n.locale === 'zh' ? '关闭' : 'Close' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
         </main>
       </div>
 
       <!-- Logout Confirmation Modal -->
-      <div v-if="isLogoutModalOpen" class="modal-layer" role="dialog" aria-modal="true" aria-label="Logout confirmation" @keydown.esc.prevent="closeLogoutModal">
-        <div class="modal-backdrop" @click="closeLogoutModal" aria-hidden="true"></div>
-        <div class="modal modal--logout" @click.stop>
-          <div class="modal-header">
-            <div class="modal-title">{{ i18n.locale === 'zh' ? '确认退出' : 'Confirm Logout' }}</div>
-            <button type="button" class="modal-close" @click="closeLogoutModal" :aria-label="t('user.closeDialogAria')">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 6 6 18" />
-                <path d="M6 6 18 18" />
-              </svg>
-            </button>
-          </div>
-
-          <div class="modal-body">
-            <div class="logout-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-            </div>
-            <p class="logout-text">{{ i18n.locale === 'zh' ? '确定要退出登录吗？' : 'Are you sure you want to log out?' }}</p>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" class="modal-btn ghost" @click="closeLogoutModal">{{ t('user.cancel') }}</button>
-            <button type="button" class="modal-btn primary" @click="confirmLogout">{{ t('user.logout') }}</button>
-          </div>
-        </div>
-      </div>
+      <WarningModal
+        v-model="isLogoutModalOpen"
+        type="warning"
+        :title="i18n.locale === 'zh' ? '确认退出' : 'Confirm Logout'"
+        :message="i18n.locale === 'zh' ? '确定要退出登录吗？' : 'Are you sure you want to log out?'"
+        :show-cancel="true"
+        :confirm-text="t('user.logout')"
+        :cancel-text="t('user.cancel')"
+        @confirm="confirmLogout"
+      />
 
       <!-- Edit Modal (Birthday / Email / Username) -->
       <div v-if="isEditOpen" class="modal-layer" role="dialog" aria-modal="true" :aria-label="editModalTitle" @keydown.esc.prevent="closeEdit">
@@ -544,6 +744,7 @@
   import { useErrorStore } from '@/stores/error'
   import { useSuccessStore } from '@/stores/success'
   import { useI18nStore } from '@/stores/i18n'
+  import WarningModal from '@/components/WarningModal.vue'
   import bgVideo from '@/assets/images/section4.webm'
   import bgVideoRight from '@/assets/images/about.mp4'
   
@@ -556,17 +757,19 @@
   
   const isMounted = ref(false)
   const contentAnimate = ref(false)
-  const activeTab = ref('profile') // 'profile' | 'dominate' | 'news'
+  const activeTab = ref('profile') // 'profile' | 'dominate' | 'news' | 'messages'
 
   const headerText = computed(() => {
     if (activeTab.value === 'profile') return t('user.headerProfile')
     if (activeTab.value === 'dominate') return t('user.headerDominate')
+    if (activeTab.value === 'messages') return t('messages.headerMessages')
     return t('user.headerNews')
   })
 
   const subtitleText = computed(() => {
     if (activeTab.value === 'profile') return t('user.subtitleProfile')
     if (activeTab.value === 'dominate') return t('user.subtitleDominate')
+    if (activeTab.value === 'messages') return t('messages.subtitleMessages')
     return t('user.subtitleNews')
   })
 
@@ -582,6 +785,28 @@
 
   const canPublishNews = ref(false)
   const isAdmin = ref(false)
+  const hasUpdatedResume = ref(false)
+
+  // Messages state
+  const messages = ref([])
+  const isLoadingMessages = ref(false)
+  const msgFilter = ref('all') // 'all' | 'unread'
+  const unreadCount = ref(0)
+  const markingReadId = ref(null)
+  const deletingMsgId = ref(null)
+  const isMessageDetailOpen = ref(false)
+  const selectedMessage = ref(null)
+  const messagesReady = ref(false) // 控制消息列表出场动画
+
+  // (Broadcast moved to separate page)
+
+  // 检查用户是否更新了 profile（有 email 或 birthday 或 photo）
+  const hasUpdatedProfile = computed(() => {
+    const hasEmail = !!(userStore.email || profileEmail.value)
+    const hasBirthday = !!userStore.birthday
+    const hasPhoto = !!(userStore.photo || userPhotoUrl.value)
+    return hasEmail || hasBirthday || hasPhoto
+  })
 
   function todayYmd() {
     const d = new Date()
@@ -949,6 +1174,169 @@
     }
   }
 
+  async function fetchMyResume() {
+    const token = userStore.accessToken
+    if (!token) return
+
+    try {
+      const res = await fetch('/api/resumes/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      if (res.ok) {
+        let data = null
+        try { data = await res.json() } catch (e) {}
+        // 如果有 resume 数据，说明用户已更新过履历
+        hasUpdatedResume.value = !!(data && (data.id || data.user_id || data.updated_at))
+      } else if (res.status === 404) {
+        // 没有 resume
+        hasUpdatedResume.value = false
+      }
+    } catch (err) {
+      // 静默失败，不影响页面显示
+      hasUpdatedResume.value = false
+    }
+  }
+
+  // Messages functions
+  async function loadMessages() {
+    const token = userStore.accessToken
+    if (!token) return
+
+    isLoadingMessages.value = true
+    messagesReady.value = false // 重置动画状态
+    try {
+      const unreadOnly = msgFilter.value === 'unread'
+      const res = await fetch(`/api/messages/me?limit=50&offset=0&unread_only=${unreadOnly}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        messages.value = await res.json()
+        // 等待DOM更新后触发出场动画
+        await nextTick()
+        requestAnimationFrame(() => {
+          messagesReady.value = true
+        })
+      }
+    } catch (err) {
+      // 静默失败
+    } finally {
+      isLoadingMessages.value = false
+    }
+  }
+
+  async function loadUnreadCount() {
+    const token = userStore.accessToken
+    if (!token) return
+
+    try {
+      const res = await fetch('/api/messages/me?limit=100&offset=0&unread_only=true', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        unreadCount.value = Array.isArray(data) ? data.length : 0
+      }
+    } catch (err) {
+      // 静默失败
+    }
+  }
+
+  async function markAsRead(messageId) {
+    const token = userStore.accessToken
+    if (!token) return
+
+    markingReadId.value = messageId
+    try {
+      const res = await fetch(`/api/messages/${messageId}/read`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        // 更新本地状态
+        const msg = messages.value.find(m => m.id === messageId)
+        if (msg) {
+          msg.read_at = new Date().toISOString()
+        }
+        // 更新 selectedMessage 如果是当前选中的
+        if (selectedMessage.value && selectedMessage.value.id === messageId) {
+          selectedMessage.value.read_at = new Date().toISOString()
+        }
+        // 更新未读数
+        if (unreadCount.value > 0) unreadCount.value--
+      }
+    } catch (err) {
+      // 静默失败
+    } finally {
+      markingReadId.value = null
+    }
+  }
+
+  async function markAsReadAndClose(messageId) {
+    await markAsRead(messageId)
+    closeMessageDetail()
+  }
+
+  function openMessageDetail(msg) {
+    selectedMessage.value = { ...msg }
+    isMessageDetailOpen.value = true
+  }
+
+  function closeMessageDetail() {
+    isMessageDetailOpen.value = false
+    selectedMessage.value = null
+  }
+
+  async function deleteMessage(messageId) {
+    const token = userStore.accessToken
+    if (!token) return
+
+    deletingMsgId.value = messageId
+    try {
+      const res = await fetch(`/api/messages/${messageId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok || res.status === 204) {
+        // 从列表中移除
+        const idx = messages.value.findIndex(m => m.id === messageId)
+        if (idx !== -1) {
+          const msg = messages.value[idx]
+          // 如果是未读消息，更新未读数
+          if (!msg.read_at && unreadCount.value > 0) {
+            unreadCount.value--
+          }
+          messages.value.splice(idx, 1)
+        }
+        successStore.showSuccess(i18n.locale === 'zh' ? '已删除' : 'Deleted')
+      }
+    } catch (err) {
+      errorStore.showError(err?.message || (i18n.locale === 'zh' ? '删除失败' : 'Delete failed'))
+    } finally {
+      deletingMsgId.value = null
+    }
+  }
+
+  function formatMsgTime(dateStr) {
+    if (!dateStr) return ''
+    const d = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now - d
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    
+    if (diffDays === 0) {
+      return d.toLocaleTimeString(i18n.locale === 'zh' ? 'zh-CN' : 'en-US', { hour: '2-digit', minute: '2-digit' })
+    } else if (diffDays === 1) {
+      return i18n.locale === 'zh' ? '昨天' : 'Yesterday'
+    } else if (diffDays < 7) {
+      return `${diffDays} ${i18n.locale === 'zh' ? '天前' : 'days ago'}`
+    } else {
+      return d.toLocaleDateString(i18n.locale === 'zh' ? 'zh-CN' : 'en-US', { month: 'short', day: 'numeric' })
+    }
+  }
+
+  // (Broadcast functions moved to separate page)
+
   async function saveEdit() {
     if (isSavingEdit.value) return
     editError.value = ''
@@ -1039,12 +1427,7 @@
     isLogoutModalOpen.value = true
   }
 
-  function closeLogoutModal() {
-    isLogoutModalOpen.value = false
-  }
-
   function confirmLogout() {
-    isLogoutModalOpen.value = false
     userStore.logout()
     router.push('/login')
   }
@@ -1057,6 +1440,8 @@
     canPublishNews.value = computeCanPublishNewsFromToken(userStore.accessToken)
     isAdmin.value = computeIsAdminFromToken(userStore.accessToken)
     fetchMyProfile()
+    fetchMyResume()
+    loadUnreadCount()
   })
 
   watch(activeTab, async () => {
@@ -1074,8 +1459,10 @@
       isAdmin.value = computeIsAdminFromToken(userStore.accessToken)
       if (!userStore.accessToken) {
         if (activeTab.value === 'news') activeTab.value = 'profile'
+        hasUpdatedResume.value = false
       } else {
         fetchMyProfile()
+        fetchMyResume()
       }
     }
   )
@@ -1241,6 +1628,445 @@
     padding: 6px 2px;
   }
 
+  /* Messages Panel */
+  .panel--messages {
+    padding: 6px 2px;
+  }
+
+  .msg-filter-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .msg-filter-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border: 1.5px solid rgba(0, 0, 0, 0.1);
+    background: transparent;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.55);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .msg-filter-tab:hover {
+    border-color: rgba(0, 0, 0, 0.25);
+    color: #0f172a;
+  }
+
+  .msg-filter-tab.active {
+    background: #0f172a;
+    border-color: #0f172a;
+    color: #fff;
+  }
+
+  .msg-filter-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: rgba(239, 68, 68, 0.15);
+    color: #dc2626;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .msg-filter-tab.active .msg-filter-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+  }
+
+  .msg-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 48px 0;
+    color: rgba(0, 0, 0, 0.45);
+    font-size: 14px;
+  }
+
+  .msg-spinner {
+    width: 28px;
+    height: 28px;
+    border: 2.5px solid rgba(0, 0, 0, 0.1);
+    border-top-color: #0f172a;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .msg-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 56px 24px;
+    text-align: center;
+  }
+
+  .msg-empty-icon {
+    color: rgba(0, 0, 0, 0.2);
+    margin-bottom: 16px;
+  }
+
+  .msg-empty-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 6px;
+  }
+
+  .msg-empty-desc {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.45);
+  }
+
+  .msg-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .msg-item {
+    position: relative;
+    display: flex;
+    gap: 14px;
+    padding: 20px 22px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1.5px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    cursor: pointer;
+    /* 出场动画初始状态 */
+    opacity: 0;
+    transform: translateY(32px);
+    filter: blur(8px);
+    transition: 
+      opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+      filter 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.25s ease,
+      border-color 0.25s ease,
+      background 0.25s ease;
+    transition-delay: calc(var(--idx, 0) * 100ms);
+    /* 防止文字抖动 */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .msg-item--ready {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+
+  .msg-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.12);
+    background: #ffffff;
+  }
+
+  .msg-item--ready:hover {
+    transform: translateY(-4px);
+  }
+
+  .msg-item:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    background: rgba(0, 0, 0, 0.02);
+    transition: 
+      transform 0.08s ease,
+      box-shadow 0.08s ease,
+      background 0.08s ease;
+  }
+
+  /* 未读消息 - 蓝色边框 */
+  .msg-item--unread {
+    border-color: rgba(59, 130, 246, 0.25);
+  }
+
+  .msg-item--unread:hover {
+    border-color: rgba(59, 130, 246, 0.4);
+  }
+
+  .msg-item--unread:active {
+    background: rgba(59, 130, 246, 0.03);
+  }
+
+  /* 已读消息 - 绿色边框 */
+  .msg-item--read {
+    border-color: rgba(34, 197, 94, 0.25);
+  }
+
+  .msg-item--read:hover {
+    border-color: rgba(34, 197, 94, 0.4);
+  }
+
+  .msg-item--read:active {
+    background: rgba(34, 197, 94, 0.03);
+  }
+
+  .msg-item-indicator {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 40%;
+    min-height: 24px;
+    background: #3b82f6;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .msg-item-indicator--read {
+    background: #22c55e;
+  }
+
+  .msg-item-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .msg-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .msg-item-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+  }
+
+  .msg-item--unread .msg-item-title {
+    color: #1e40af;
+  }
+
+  .msg-item-time {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.4);
+    font-weight: 500;
+  }
+
+  .msg-item-body {
+    width: 720px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #374151;
+    /* 限制为单行，多余文字省略号 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .msg-item-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+  }
+
+  .msg-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .msg-item-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border: 1.5px solid #3b82f6;
+    background: transparent;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #3b82f6;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .msg-item-action:hover:not(:disabled) {
+    background: #3b82f6;
+    color: #fff;
+  }
+
+  .msg-item-action:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .msg-item-read {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #16a34a;
+    font-weight: 500;
+  }
+
+  .msg-item-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: rgba(239, 68, 68, 0.08);
+    border-radius: 8px;
+    color: #ef4444;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .msg-item-delete:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.15);
+    transform: scale(1.08);
+  }
+
+  .msg-item-delete:active:not(:disabled) {
+    transform: scale(0.92);
+    transition: transform 0.1s ease;
+  }
+
+  .msg-item-delete:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* 消息详情弹窗 */
+  .msg-detail-modal {
+    max-width: 520px;
+    width: 90%;
+  }
+
+  .msg-detail-body {
+    padding: 24px !important;
+  }
+
+  .msg-detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .msg-detail-time {
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.5);
+  }
+
+  .msg-detail-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .msg-detail-status--read {
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+  }
+
+  .msg-detail-status--unread {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+  }
+
+  .msg-detail-content {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #1f2937;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .msg-detail-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn--primary {
+    background: #3b82f6;
+    border: none;
+    color: #fff;
+  }
+
+  .btn--primary:hover:not(:disabled) {
+    background: #2563eb;
+  }
+
+  .btn--primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn--ghost {
+    background: transparent;
+    border: 1.5px solid rgba(0, 0, 0, 0.15);
+    color: #374151;
+  }
+
+  .btn--ghost:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.25);
+  }
+
+  .nav-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    margin-left: 6px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    vertical-align: middle;
+  }
+
   /* Hover invert (match profile cards) */
   .news-choice__card:hover .news-choice__card-title {
     color: #ffffff;
@@ -1319,7 +2145,7 @@
     display: block;
     font-size: 14px;
     font-weight: 800;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.02em;
   }
   
   .nav-desc {
@@ -1908,58 +2734,6 @@
       transform: none;
       filter: none;
     }
-  }
-
-  /* Logout Confirmation Modal */
-  .modal--logout {
-    text-align: center;
-  }
-
-  .modal--logout .modal-header {
-    justify-content: center;
-    position: relative;
-  }
-
-  .modal--logout .modal-close {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-
-  .modal--logout .modal-body {
-    padding: 24px 16px 20px;
-  }
-
-  .logout-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 20px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.06);
-    color: #0f172a;
-  }
-
-  .logout-text {
-    margin: 0;
-    font-size: 15px;
-    line-height: 1.6;
-    color: rgba(15, 23, 42, 0.78);
-  }
-
-  .modal--logout .modal-actions {
-    justify-content: center;
-    gap: 16px;
-    padding: 16px 24px 24px;
-    border-top: none;
-  }
-
-  .modal--logout .modal-btn {
-    min-width: 100px;
-    padding: 12px 24px;
   }
   </style>
   

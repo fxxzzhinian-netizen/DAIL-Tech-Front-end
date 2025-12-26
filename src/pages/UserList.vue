@@ -137,11 +137,7 @@
           <div class="form-row">
             <label class="form-label">{{ isZh ? '角色' : 'Role' }}</label>
             <select class="form-select" v-model="editForm.role">
-              <option :value="0">{{ isZh ? '游客' : 'Guest' }} (0)</option>
-              <option :value="1">{{ isZh ? '实习生' : 'Intern' }} (1)</option>
-              <option :value="2">{{ isZh ? '职员' : 'Staff' }} (2)</option>
-              <option :value="3">{{ isZh ? '管理' : 'Manager' }} (3)</option>
-              <option :value="4">{{ isZh ? '大管理' : 'Admin' }} (4)</option>
+              <option v-for="opt in roleOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
             </select>
           </div>
           <div class="form-row form-row--checkbox">
@@ -176,6 +172,7 @@ import { useUserStore } from '@/stores/user'
 import { useErrorStore } from '@/stores/error'
 import { useSuccessStore } from '@/stores/success'
 import { listAllUsers, updateUserByAdmin } from '@/services/adminService'
+import { getRoleOptions } from '@/utils/roles'
 
 const router = useRouter()
 const i18n = useI18nStore()
@@ -185,6 +182,9 @@ const successStore = useSuccessStore()
 
 const isZh = computed(() => i18n.locale === 'zh')
 const pageEnter = ref(false)
+
+// Role options from global definition
+const roleOptions = computed(() => getRoleOptions(isZh.value ? 'zh' : 'en'))
 
 // Check if current user has admin role (role == 4)
 const isAdmin = computed(() => {
@@ -632,19 +632,6 @@ onMounted(() => {
 .btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
-}
-
-/* Responsive */
-@media (max-width: 640px) {
-  .user-list-page { padding: 100px 16px 140px; }
-  .page-title { font-size: 32px; }
-  .user-card { padding: 12px 16px; }
-  .user-avatar { width: 48px; height: 48px; }
-  .avatar-letter { font-size: 18px; }
-  .user-name { font-size: 15px; }
-  .bottom-inner { flex-direction: column; gap: 12px; align-items: stretch; }
-  .bottom-left { text-align: center; }
-  .bottom-right { justify-content: center; }
 }
 
 /* Modal */

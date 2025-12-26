@@ -459,31 +459,4 @@ onMounted(() => {
   border: 1px solid #000000;
   color: #000000;
 }
-
-/* Responsive */
-@media (max-width: 820px) {
-  .resume-container { padding: 100px 16px 120px; }
-  .hero-title { font-size: 48px; }
-  .hero-dek { font-size: 18px; }
-  .hero-dept { font-size: 16px; }
-  .section-label { font-size: 18px; }
-  .info-grid { gap: 24px 40px; }
-  .info-value { font-size: 16px; }
-  .bio-text { font-size: 18px; }
-}
-
-@media (max-width: 480px) {
-  .resume-container { padding: 90px 12px 110px; }
-  .hero-title { font-size: 36px; }
-  .hero-dek { font-size: 16px; margin-top: 16px; }
-  .hero-dept { font-size: 14px; }
-  .avatar-circle { width: 100px; height: 100px; }
-  .avatar-letter { font-size: 32px; }
-  .section-label { font-size: 16px; }
-  .info-label { font-size: 11px; }
-  .info-value { font-size: 15px; }
-  .bio-text { font-size: 16px; line-height: 1.8; }
-  .bio-image { border-radius: 12px; }
-  .btn { height: 32px; padding: 0 12px; font-size: 12px; }
-}
 </style>

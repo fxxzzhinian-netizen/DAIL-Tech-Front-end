@@ -131,6 +131,13 @@
             <button type="button" class="link-btn">{{ t('auth.forgotPassword') }}</button>
           </div>
 
+          <div class="form-row form-row--animation fade-in-up" :class="{ 'animate': isMounted }">
+            <label class="checkbox">
+              <input v-model="enableLoginAnimation" type="checkbox" />
+              <span>{{ i18n.locale === 'zh' ? '开启登录动画' : 'Enable login animation' }}</span>
+            </label>
+          </div>
+
           <button type="submit" class="primary-btn fade-in-up" :class="{ 'animate': isMounted }">{{ t('auth.signIn') }}</button>
         </form>
 
@@ -239,7 +246,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useErrorStore } from '@/stores/error'
@@ -299,6 +306,7 @@ const passwordLabelChars = computed(() =>
 const phone = ref('')
 const password = ref('')
 const remember = ref(true)
+const enableLoginAnimation = ref(localStorage.getItem('enableLoginAnimation') !== 'false')
 const isMounted = ref(false)
 const showLeftText = ref(false)
 
@@ -596,8 +604,12 @@ const handleSubmit = async () => {
       remember.value
     )
 
-    // 登录成功后跑你现有的转场
-    runSignInTransition()
+    // 登录成功后根据设置决定是否播放动画
+    if (enableLoginAnimation.value) {
+      runSignInTransition()
+    } else {
+      router.push('/home')
+    }
   } catch (err) {
     // 显示错误提示
     const errorMessage = err?.message || t('auth.errLoginFailed')
@@ -608,6 +620,11 @@ const handleSubmit = async () => {
     }
   }
 }
+
+// 保存登录动画设置到 localStorage
+watch(enableLoginAnimation, (val) => {
+  localStorage.setItem('enableLoginAnimation', val ? 'true' : 'false')
+})
 
 onMounted(() => {
   // 延迟触发动画，确保 DOM 渲染完成
@@ -1068,6 +1085,16 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+}
+
+.form-row--animation {
+  justify-content: flex-start;
+  margin-top: -8px;
+}
+
+.form-row--animation .checkbox span {
+  color: #9ca3af;
+  font-size: 12px;
 }
 
 .checkbox {

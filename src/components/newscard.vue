@@ -111,10 +111,12 @@ const displayText = computed(() => {
   min-height: 36px;
   width: min(400px, 100%);
   cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease,
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.15s ease, box-shadow 0.2s ease,
     background 0.15s ease;
   position: relative;
   isolation: isolate;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .news-card::before {
@@ -166,7 +168,7 @@ const displayText = computed(() => {
 }
 
 .news-card:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.02);
 }
 
 .news-card:hover::after {
@@ -175,7 +177,12 @@ const displayText = computed(() => {
 }
 
 .news-card:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.97);
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.news-card:active::after {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
 .news-card:focus-visible {

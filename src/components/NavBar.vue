@@ -19,9 +19,9 @@
           {{ t('nav.solutions') }} <span class="plus">+</span>
         </button>
         <div class="dropdown dropdown--solutions">
-          <a href="#" class="dropdown-item">{{ t('nav.solutionsByIndustry') }}</a>
-          <a href="#" class="dropdown-item">{{ t('nav.solutionsByScenario') }}</a>
-          <a href="#" class="dropdown-item">{{ t('nav.solutionsCustom') }}</a>
+          <a href="/coming-soon" class="dropdown-item" @click.prevent="router.push('/coming-soon')">{{ t('nav.solutionsByIndustry') }}</a>
+          <a href="/coming-soon" class="dropdown-item" @click.prevent="router.push('/coming-soon')">{{ t('nav.solutionsByScenario') }}</a>
+          <a href="/coming-soon" class="dropdown-item" @click.prevent="router.push('/coming-soon')">{{ t('nav.solutionsCustom') }}</a>
         </div>
       </div>
 
@@ -31,9 +31,9 @@
           {{ t('nav.technology') }} <span class="plus">+</span>
         </button>
         <div class="dropdown dropdown--technology">
-          <a href="#" class="dropdown-item">{{ t('nav.technologyPlatform') }}</a>
-          <a href="#" class="dropdown-item">{{ t('nav.technologyAgents') }}</a>
-          <a href="#" class="dropdown-item">{{ t('nav.technologyRag') }}</a>
+          <a href="/coming-soon" class="dropdown-item" @click.prevent="router.push('/coming-soon')">{{ t('nav.technologyPlatform') }}</a>
+          <a href="/coming-soon" class="dropdown-item" @click.prevent="router.push('/coming-soon')">{{ t('nav.technologyAgents') }}</a>
+          <a href="/coming-soon" class="dropdown-item" @click.prevent="router.push('/coming-soon')">{{ t('nav.technologyRag') }}</a>
         </div>
       </div>
 
@@ -72,21 +72,21 @@
         <div class="dropdown dropdown--company">
           <a href="/about" class="dropdown-item" @click.prevent="router.push('/about')">{{ t('nav.companyAbout') }}</a>
           <a href="/team" class="dropdown-item" @click.prevent="router.push('/team')">{{ t('nav.companyTeam') }}</a>
-          <a href="#" class="dropdown-item">{{ t('nav.companyCareers') }}</a>
+          <a href="/career" class="dropdown-item" @click.prevent="router.push('/career')">{{ t('nav.companyCareers') }}</a>
           <a href="/news" class="dropdown-item" @click.prevent="router.push('/news')">{{ t('nav.companyNews') }}</a>
         </div>
       </div>
 
       <!-- DOCS 普通项 -->
       <div class="menu-item">
-        <button class="menu-link">{{ t('nav.docs') }}</button>
+        <button class="menu-link" @click="router.push('/coming-soon')">{{ t('nav.docs') }}</button>
       </div>
     </nav>
 
     <!-- 右侧：Contact Us + Search + Login -->
     <div class="nav-actions">
       <!-- Contact Us 按钮 -->
-      <button class="btn-12">
+      <button class="btn-12" @click="router.push('/career/join')">
         <span>{{ t('nav.contactUs') }}</span>
       </button>
 

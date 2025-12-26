@@ -26,12 +26,12 @@
         </h2>
 
         <div class="cta-buttons fade-in-slide" :class="{ 'animate': isVisible }">
-          <button class="btn-try">
+          <button class="btn-try" @click="router.push('/coming-soon')">
             <span class="text-container">
               <span class="text">{{ $t('cta.talk') }}</span>
             </span>
           </button>
-          <button class="btn-talk animated-button">
+          <button class="btn-talk animated-button" @click="router.push('/coming-soon')">
             <svg xmlns="http://www.w3.org/2000/svg" class="arr-2" viewBox="0 0 24 24">
               <path
                 d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
@@ -53,8 +53,10 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import videoSrc from '@/assets/images/section4.webm'
 
+const router = useRouter()
 const ctaRef = ref(null)
 const isVisible = ref(false)
 let observer = null

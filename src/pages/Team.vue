@@ -183,7 +183,7 @@ const loadedAvatars = ref(new Set()) // 跟踪已加载的头像
 // 按角色分组
 const founders = computed(() => members.value.filter(m => m.role === 4))
 const managers = computed(() => members.value.filter(m => m.role === 3))
-const staff = computed(() => members.value.filter(m => m.role === 2 || m.role === 1))
+const staff = computed(() => members.value.filter(m => m.role === 2))
 
 function getInitial(name) {
   const s = String(name || '').trim() || 'U'
@@ -369,12 +369,23 @@ onMounted(() => {
   border-radius: 12px;
   border: 2px solid #e5e7eb;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), 
+              box-shadow 0.2s ease,
+              border-color 0.2s ease,
+              background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .member-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1);
+}
+
+.member-card:active {
+  transform: translateY(0) scale(0.98);
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
 }
 
 /* 创始人 - 深红色边框 */
@@ -385,7 +396,11 @@ onMounted(() => {
 
 .member-card--founder:hover {
   border-color: #7f1d1d;
-  box-shadow: 0 8px 24px rgba(153, 27, 27, 0.12);
+  box-shadow: 0 12px 28px rgba(153, 27, 27, 0.15);
+}
+
+.member-card--founder:active {
+  box-shadow: 0 2px 8px rgba(153, 27, 27, 0.1);
 }
 
 /* 主管 - 金色边框 */
@@ -396,7 +411,11 @@ onMounted(() => {
 
 .member-card--manager:hover {
   border-color: #92400e;
-  box-shadow: 0 8px 24px rgba(180, 83, 9, 0.12);
+  box-shadow: 0 12px 28px rgba(180, 83, 9, 0.15);
+}
+
+.member-card--manager:active {
+  box-shadow: 0 2px 8px rgba(180, 83, 9, 0.1);
 }
 
 /* 职员 - 蓝色边框 */
@@ -407,7 +426,11 @@ onMounted(() => {
 
 .member-card--staff:hover {
   border-color: #1e40af;
-  box-shadow: 0 8px 24px rgba(29, 78, 216, 0.12);
+  box-shadow: 0 12px 28px rgba(29, 78, 216, 0.15);
+}
+
+.member-card--staff:active {
+  box-shadow: 0 2px 8px rgba(29, 78, 216, 0.1);
 }
 
 .member-card--compact {
@@ -661,30 +684,5 @@ onMounted(() => {
 .profile-private p {
   margin: 0;
   font-size: 13px;
-}
-
-/* 响应式 */
-@media (max-width: 1024px) {
-  .member-card {
-    width: calc(50% - 10px);
-  }
-}
-
-@media (max-width: 640px) {
-  .team-page {
-    padding: 100px 16px 48px;
-  }
-
-  .team-title {
-    font-size: 42px;
-  }
-
-  .member-card {
-    width: 100%;
-  }
-
-  .section-header {
-    gap: 16px;
-  }
 }
 </style>

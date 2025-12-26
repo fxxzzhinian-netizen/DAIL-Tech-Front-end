@@ -12,11 +12,20 @@ import PreviewNews from '@/pages/preview_news.vue'
 import DeleteNews from '@/pages/delete_news.vue'
 import About from '@/pages/About.vue'
 import Team from '@/pages/Team.vue'
+import Career from '@/pages/Career.vue'
+import InternApply from '@/pages/InternApply.vue'
+import InternManage from '@/pages/InternManage.vue'
+import BroadcastMessage from '@/pages/BroadcastMessage.vue'
+import ComingSoon from '@/pages/ComingSoon.vue'
+import JoinUs from '@/pages/JoinUs.vue'
 
 const routes = [
   { path: '/', name: 'home', component: Home },
   { path: '/about', name: 'about', component: About },
   { path: '/team', name: 'team', component: Team },
+  { path: '/career', name: 'career', component: Career },
+  { path: '/career/intern-apply', name: 'intern-apply', component: InternApply },
+  { path: '/career/join', name: 'join-us', component: JoinUs },
   { path: '/news', name: 'news', component: News },
   { path: '/news/preview', name: 'news-preview', component: PreviewNews },
   { path: '/news/delete', name: 'news-delete', component: DeleteNews },
@@ -27,6 +36,9 @@ const routes = [
   { path: '/user/resume', name: 'resume-settings', component: ResumeSettings },
   { path: '/user/resume/:userId', name: 'resume-view', component: ResumeView },
   { path: '/user/list', name: 'user-list', component: UserList },
+  { path: '/user/interns', name: 'intern-manage', component: InternManage },
+  { path: '/user/broadcast', name: 'broadcast-message', component: BroadcastMessage },
+  { path: '/coming-soon', name: 'coming-soon', component: ComingSoon },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 

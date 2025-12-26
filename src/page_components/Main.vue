@@ -25,11 +25,11 @@
           {{ t('hero.subtitle') }}
         </p>
           <div class="hero-actions fade-in-up" :class="{ 'animate': isMounted }">
-            <button class="btn-primary">
+            <button class="btn-primary" @click="router.push('/coming-soon')">
               {{ t('hero.tryDail') }}
               <span class="icon-arrow">↗</span>
             </button>
-            <button class="btn-ghost">
+            <button class="btn-ghost" @click="router.push('/coming-soon')">
               {{ t('hero.downloadDail') }}
             </button>
           </div>

@@ -12,7 +12,7 @@
             <div class="title-row">
               <span class="title-line title-line-first">{{ $t('platform.titleLine1') }}</span>
               <div class="floating-learn-more fade-in-up" :class="{ 'animate': isVisible }">
-                <button class="learn-more-button" type="button">
+                <button class="learn-more-button" type="button" @click="router.push('/coming-soon')">
                   <span class="circle" aria-hidden="true">
                     <span class="icon arrow"></span>
                   </span>
@@ -28,7 +28,7 @@
             {{ $t('platform.subtitle') }}
           </p>
   
-          <button class="btn-primary fade-in-up" :class="{ 'animate': isVisible }">
+          <button class="btn-primary fade-in-up" :class="{ 'animate': isVisible }" @click="router.push('/coming-soon')">
             {{ $t('platform.explore') }}
           </button>
         </div>
@@ -42,7 +42,7 @@
       <!-- 下半：四个功能卡片（位于下方左半部分） -->
       <div class="platform-grid fade-in-up" :class="{ 'animate': isVisible }">
         <div class="platform-grid-left">
-          <div class="grid-card fade-in-up" :class="{ 'animate': isVisible }">
+          <div class="grid-card fade-in-up" :class="{ 'animate': isVisible }" @click="router.push('/coming-soon')">
             <img :src="oneIcon" :alt="$t('platform.card1.alt')" class="grid-icon" />
             <div class="grid-title">{{ $t('platform.card1.title') }}</div>
             <div class="grid-desc">
@@ -51,7 +51,7 @@
             <div class="grid-learn-more">{{ $t('platform.learnMore') }} <span class="learn-arrow">→</span></div>
           </div>
   
-          <div class="grid-card fade-in-up" :class="{ 'animate': isVisible }">
+          <div class="grid-card fade-in-up" :class="{ 'animate': isVisible }" @click="router.push('/coming-soon')">
             <img :src="twoIcon" :alt="$t('platform.card2.alt')" class="grid-icon" />
             <div class="grid-title">{{ $t('platform.card2.title') }}</div>
             <div class="grid-desc">
@@ -60,7 +60,7 @@
             <div class="grid-learn-more">{{ $t('platform.learnMore') }} <span class="learn-arrow">→</span></div>
           </div>
   
-          <div class="grid-card fade-in-up" :class="{ 'animate': isVisible }">
+          <div class="grid-card fade-in-up" :class="{ 'animate': isVisible }" @click="router.push('/coming-soon')">
             <img :src="threeIcon" :alt="$t('platform.card3.alt')" class="grid-icon" />
             <div class="grid-title">{{ $t('platform.card3.title') }}</div>
             <div class="grid-desc">
@@ -69,7 +69,7 @@
             <div class="grid-learn-more">{{ $t('platform.learnMore') }} <span class="learn-arrow">→</span></div>
           </div>
   
-          <div class="grid-card fade-in-up" :class="{ 'animate': isVisible }">
+          <div class="grid-card fade-in-up" :class="{ 'animate': isVisible }" @click="router.push('/coming-soon')">
             <img :src="fourIcon" :alt="$t('platform.card4.alt')" class="grid-icon" />
             <div class="grid-title">{{ $t('platform.card4.title') }}</div>
             <div class="grid-desc">
@@ -85,12 +85,14 @@
   
   <script setup>
   import { ref, onMounted, onBeforeUnmount } from 'vue'
+  import { useRouter } from 'vue-router'
   import oneIcon from '@/assets/images/one.png'
   import twoIcon from '@/assets/images/two.png'
   import threeIcon from '@/assets/images/three.png'
   import fourIcon from '@/assets/images/four.png'
   import backgroundImg from '@/assets/images/background.png'
 
+  const router = useRouter()
   const platformRef = ref(null)
   const isVisible = ref(false)
   let observer = null

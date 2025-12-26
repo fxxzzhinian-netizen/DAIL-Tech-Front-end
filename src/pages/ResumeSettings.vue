@@ -24,9 +24,10 @@
             <div class="avatar-section">
               <label class="avatar-uploader" :class="{ uploading: isUploadingAvatar, 'has-avatar': !!avatarUrl }">
                 <input ref="avatarInputRef" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="sr-only" :disabled="isUploadingAvatar" @change="handleAvatarUpload" />
-                <div class="avatar-circle">
-                  <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" />
+                <div class="avatar-circle" :class="{ 'avatar-loading': avatarUrl && !avatarLoaded }">
+                  <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" @load="onAvatarLoad" />
                   <div v-else class="avatar-letter">{{ avatarLetter }}</div>
+                  <div class="avatar-skeleton"></div>
                   <div class="avatar-overlay">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                       <path d="M12 20h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -215,6 +216,12 @@ const isSavingResume = ref(false)
 // Avatar upload
 const avatarInputRef = ref(null)
 const isUploadingAvatar = ref(false)
+const avatarLoaded = ref(false)
+
+// 头像加载完成
+function onAvatarLoad() {
+  avatarLoaded.value = true
+}
 
 // Content blocks editor
 let blockIdCounter = 0
@@ -269,6 +276,7 @@ async function handleAvatarUpload(event) {
     return
   }
   isUploadingAvatar.value = true
+  avatarLoaded.value = false // 重置加载状态
   try {
     await uploadUserImage({ file, imageType: 'avatar', caption: '', displayOrder: 0 })
     successStore.showSuccess(isZh.value ? '头像上传成功' : 'Avatar uploaded')
@@ -765,7 +773,11 @@ onMounted(async () => {
 .avatar-uploader { cursor: pointer; user-select: none; }
 .avatar-circle { width: 140px; height: 140px; border-radius: 999px; overflow: hidden; border: 4px solid #fff; background: rgba(255, 255, 255, 0.9); box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2); position: relative; display: grid; place-items: center; transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .avatar-uploader:hover .avatar-circle { transform: translateY(-3px); box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25); }
-.avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-circle img { width: 100%; height: 100%; object-fit: cover; opacity: 1; transition: opacity 0.4s ease; }
+.avatar-circle.avatar-loading img { opacity: 0; }
+.avatar-skeleton { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,0.06) 25%, rgba(0,0,0,0.12) 50%, rgba(0,0,0,0.06) 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.5s infinite; opacity: 0; transition: opacity 0.3s ease; border-radius: 999px; }
+.avatar-circle.avatar-loading .avatar-skeleton { opacity: 1; }
+@keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 .avatar-letter { width: 100%; height: 100%; display: grid; place-items: center; font-size: 48px; font-weight: 950; color: rgba(15, 23, 42, 0.82); background: radial-gradient(140px 140px at 30% 20%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.55)); }
 .avatar-overlay { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(15, 23, 42, 0.42); color: #fff; opacity: 0; transition: opacity 0.15s ease; }
 .avatar-uploader:hover .avatar-overlay { opacity: 1; }
@@ -1007,36 +1019,5 @@ onMounted(async () => {
 .btn.ghost:hover:not(:disabled) {
   background: rgba(0, 0, 0, 0.06);
   border-color: #000000;
-}
-
-/* Responsive */
-@media (max-width: 820px) {
-  .resume-container { padding: 100px 16px 140px; }
-  .meta-bar { flex-direction: column; gap: 20px; }
-  .info-row { flex-direction: column; gap: 20px; }
-  .hero-title { font-size: 48px; }
-  .hero-dek { font-size: 18px; }
-  .section-label { font-size: 18px; }
-  .bottom-inner { flex-direction: column; gap: 12px; align-items: stretch; }
-  .bottom-left { text-align: center; }
-  .bottom-right { justify-content: center; flex-wrap: wrap; }
-  .toggle-group { order: -1; width: 100%; justify-content: center; margin-right: 0; margin-bottom: 8px; }
-  .theme-checkbox { --toggle-size: 9px; }
-  .visual-editor { padding: 20px; }
-  .block-textarea { font-size: 18px; padding: 12px 40px 12px 0; }
-}
-
-@media (max-width: 480px) {
-  .resume-container { padding: 90px 12px 130px; }
-  .hero-title { font-size: 36px; }
-  .hero-dek { font-size: 16px; margin-top: 16px; }
-  .avatar-circle { width: 100px; height: 100px; }
-  .avatar-letter { font-size: 32px; }
-  .section-label { font-size: 16px; }
-  .info-label, .meta-label { font-size: 11px; }
-  .info-control, .meta-control { font-size: 16px; height: 42px; }
-  .block-textarea { font-size: 16px; }
-  .btn { height: 32px; padding: 0 12px; font-size: 12px; }
-  .theme-checkbox { --toggle-size: 8px; }
 }
 </style>
