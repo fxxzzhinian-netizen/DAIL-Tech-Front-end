@@ -200,50 +200,47 @@ defineExpose({
 .dot:hover { background: rgba(255, 255, 255, 0.9); }
 .dot.active { background: #ffffff; transform: scale(1.2); }
 
-/* 轮播动画 */
+/* 轮播动画 - 进入和离开都使用绝对定位避免布局抖动 */
 .carousel-fade-enter-active,
 .carousel-fade-leave-active {
   transition: opacity 0.5s ease, transform 0.5s ease;
   will-change: opacity, transform;
-}
-.carousel-fade-enter-from { opacity: 0; transform: scale(1.02); }
-.carousel-fade-leave-to { opacity: 0; transform: scale(0.98); }
-
-/* 避免切换时两张图片同时占位，导致文字/整体布局抖动 */
-.carousel-fade-leave-active {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
 }
+.carousel-fade-enter-from { opacity: 0; transform: scale(1.02); }
+.carousel-fade-leave-to { opacity: 0; transform: scale(0.98); }
 
-/* 左侧轮播 */
+/* 右侧轮播容器 */
 .about-four-carousel {
   position: relative;
-  flex: 1.8;
-  max-width: 1200px;
-  /* 用固定比例稳定高度，避免未加载时塌陷，同时避免图片高度小于容器导致底部露出“白边” */
-  aspect-ratio: 16 / 9;
-  max-height: 680px;
+  width: 860px;
+  height: 484px;
+  flex-shrink: 0;
   background: rgba(243, 244, 246, 0.6);
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
 }
 
+/* 图片始终使用绝对定位 */
 .about-four-carousel img {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   display: block;
   object-fit: cover;
-  /* 圆角/阴影由容器承担，避免 overflow 裁切子元素阴影 */
   border-radius: 0;
 }
 
-/* 右侧文字 */
+/* 左侧文字 */
 .about-four-text {
-  flex: 0.8;
+  flex: 1;
   max-width: 500px;
   display: flex;
   flex-direction: column;

@@ -5,9 +5,6 @@
       <div class="platform-inner">
         <!-- 左侧文字区域 -->
         <div class="platform-left">
-          <!-- 分割线替换 PLATFORM pill -->
-          <div class="platform-divider fade-in-up" :class="{ 'animate': isVisible }"></div>
-  
           <h2 class="platform-title fade-in-up" :class="{ 'animate': isVisible }">
             <div class="title-row">
               <span class="title-line title-line-first">{{ $t('platform.titleLine1') }}</span>
@@ -23,6 +20,9 @@
             <br />
             <span class="title-line">{{ $t('platform.titleLine2') }}</span>
           </h2>
+
+          <!-- 分割线移到标题下方 -->
+          <div class="platform-divider fade-in-up" :class="{ 'animate': isVisible }"></div>
   
           <p class="platform-subtitle fade-in-up" :class="{ 'animate': isVisible }">
             {{ $t('platform.subtitle') }}
@@ -267,22 +267,14 @@
   }
   
   .platform-divider {
-    width: 1000px;
+    width: 100%;
+    max-width: 1280px;
     height: 2px;
     border-radius: 999px;
-    background: linear-gradient(90deg, #111827 0%, #4b5563 50%, #9ca3af 100%);
-    margin-bottom: 16px;
-    box-shadow: 0 1px 3px rgba(17, 24, 39, 0.15);
+    background: linear-gradient(90deg, rgba(168, 85, 247, 0.8), rgba(249, 115, 22, 0.8));
+    margin: 8px 0 0px;
     position: relative;
-  }
-  
-  .platform-divider::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 999px;
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
-    pointer-events: none;
+    margin-bottom: -20px;
   }
   
   .platform-title {
@@ -388,11 +380,12 @@
   
   .grid-card {
     box-sizing: border-box;
-    background: #ffffff;
-    border: 1.4px solid rgba(0, 0, 0, 0.135);
-    /* border-right: none; */
+    background: 
+      linear-gradient(#ffffff, #ffffff) padding-box,
+      linear-gradient(135deg, rgba(192, 132, 252, 0.65), rgba(251, 191, 146, 0.65)) border-box;
+    border: 2.0px solid transparent;
     border-radius: 14px;
-    padding: 27px 31px;
+    padding: 22px 28px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -404,8 +397,18 @@
   
   .grid-card:hover {
     background: #000000;
-    border: 1.4px solid rgba(0, 0, 0, 0.135);
-    /* border-right: none; */
+    border-color: #000000;
+  }
+
+  /* 第一个卡片添加渐变底色 */
+  .grid-card:nth-child(1) {
+    background: 
+      linear-gradient(135deg, rgba(243, 232, 255, 0.8), rgba(255, 237, 213, 0.6)) padding-box,
+      linear-gradient(135deg, rgba(192, 132, 252, 0.65), rgba(251, 191, 146, 0.65)) border-box;
+  }
+
+  .grid-card:nth-child(1):hover {
+    background: #000000;
   }
   
   .grid-card:hover .grid-title,

@@ -7,10 +7,10 @@
       </div>
 
       <!-- 右侧背景视频 -->
-      <div class="bg-layer-right" aria-hidden="true">
+      <!-- <div class="bg-layer-right" aria-hidden="true">
         <video class="bg-video-right" autoplay loop muted playsinline :src="bgVideoRight"></video>
         <div class="bg-mask-right"></div>
-      </div>
+      </div> -->
   
       <!-- 主体布局：左侧分选栏 + 右侧内容 -->
       <div class="layout">
@@ -599,7 +599,7 @@
                     <button 
                       class="msg-item-delete"
                       :disabled="deletingMsgId === msg.id"
-                      @click.stop="deleteMessage(msg.id)"
+                      @click.stop="openDeleteMsgModal(msg.id)"
                       :title="t('messages.delete')"
                     >
                       <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
@@ -668,6 +668,18 @@
         :confirm-text="t('user.logout')"
         :cancel-text="t('user.cancel')"
         @confirm="confirmLogout"
+      />
+
+      <!-- Delete Message Confirmation Modal -->
+      <WarningModal
+        v-model="isDeleteMsgModalOpen"
+        type="warning"
+        :title="i18n.locale === 'zh' ? '确认删除' : 'Confirm Delete'"
+        :message="i18n.locale === 'zh' ? '确定要删除这条消息吗？此操作无法撤销。' : 'Are you sure you want to delete this message? This action cannot be undone.'"
+        :show-cancel="true"
+        :confirm-text="i18n.locale === 'zh' ? '删除' : 'Delete'"
+        :cancel-text="t('user.cancel')"
+        @confirm="confirmDeleteMsg"
       />
 
       <!-- Edit Modal (Birthday / Email / Username) -->
@@ -797,6 +809,8 @@
   const isMessageDetailOpen = ref(false)
   const selectedMessage = ref(null)
   const messagesReady = ref(false) // 控制消息列表出场动画
+  const isDeleteMsgModalOpen = ref(false)
+  const pendingDeleteMsgId = ref(null)
 
   // (Broadcast moved to separate page)
 
@@ -1315,6 +1329,19 @@
     } finally {
       deletingMsgId.value = null
     }
+  }
+
+  function openDeleteMsgModal(msgId) {
+    pendingDeleteMsgId.value = msgId
+    isDeleteMsgModalOpen.value = true
+  }
+
+  async function confirmDeleteMsg() {
+    if (pendingDeleteMsgId.value) {
+      await deleteMessage(pendingDeleteMsgId.value)
+    }
+    isDeleteMsgModalOpen.value = false
+    pendingDeleteMsgId.value = null
   }
 
   function formatMsgTime(dateStr) {
@@ -2270,7 +2297,7 @@
     padding: 18px 20px;
     border-radius: 18px;
     background: rgba(255,255,255,0.78);
-    border: 1px solid rgba(0,0,0,0.06);
+    border: 1.5px solid #000000;
     box-shadow: 0 12px 30px rgba(0,0,0,0.06);
     transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
   }
