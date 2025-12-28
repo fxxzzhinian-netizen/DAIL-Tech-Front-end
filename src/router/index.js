@@ -16,6 +16,11 @@ import Career from '@/pages/Career.vue'
 import InternApply from '@/pages/InternApply.vue'
 import InternManage from '@/pages/InternManage.vue'
 import BroadcastMessage from '@/pages/BroadcastMessage.vue'
+import TaskPublish from '@/pages/TaskPublish.vue'
+import TaskList from '@/pages/TaskList.vue'
+import MyTasks from '@/pages/MyTasks.vue'
+import TaskDetail from '@/pages/TaskDetail.vue'
+import TaskSubmissions from '@/pages/TaskSubmissions.vue'
 import ComingSoon from '@/pages/ComingSoon.vue'
 import JoinUs from '@/pages/JoinUs.vue'
 
@@ -38,6 +43,11 @@ const routes = [
   { path: '/user/list', name: 'user-list', component: UserList },
   { path: '/user/interns', name: 'intern-manage', component: InternManage },
   { path: '/user/broadcast', name: 'broadcast-message', component: BroadcastMessage },
+  { path: '/user/task-publish', name: 'task-publish', component: TaskPublish },
+  { path: '/user/tasks', name: 'task-list', component: TaskList },
+  { path: '/user/my-tasks', name: 'my-tasks', component: MyTasks },
+  { path: '/user/task/:taskId', name: 'task-detail', component: TaskDetail },
+  { path: '/user/tasks/:taskId/submissions', name: 'task-submissions', component: TaskSubmissions },
   { path: '/coming-soon', name: 'coming-soon', component: ComingSoon },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]

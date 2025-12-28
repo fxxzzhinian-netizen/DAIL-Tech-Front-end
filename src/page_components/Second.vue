@@ -382,7 +382,7 @@
     box-sizing: border-box;
     background: 
       linear-gradient(#ffffff, #ffffff) padding-box,
-      linear-gradient(135deg, rgba(192, 132, 252, 0.65), rgba(251, 191, 146, 0.65)) border-box;
+      linear-gradient(24deg,  rgba(251, 191, 146, 0.75),rgba(192, 132, 252, 0.75)) border-box;
     border: 2.0px solid transparent;
     border-radius: 14px;
     padding: 22px 28px;
@@ -395,30 +395,22 @@
     position: relative;
   }
   
+  /* 悬浮时显示渐变底色 - 与边框颜色形成对比 */
   .grid-card:hover {
-    background: #000000;
-    border-color: #000000;
-  }
-
-  /* 第一个卡片添加渐变底色 */
-  .grid-card:nth-child(1) {
     background: 
-      linear-gradient(135deg, rgba(243, 232, 255, 0.8), rgba(255, 237, 213, 0.6)) padding-box,
-      linear-gradient(135deg, rgba(192, 132, 252, 0.65), rgba(251, 191, 146, 0.65)) border-box;
-  }
-
-  .grid-card:nth-child(1):hover {
-    background: #000000;
+      linear-gradient(135deg, rgba(255, 245, 235, 0.1), rgba(250, 245, 255, 0.1)) padding-box,
+      linear-gradient(135deg, rgba(192, 132, 252, 0.15), rgba(251, 191, 146, 0.15)) border-box;
   }
   
   .grid-card:hover .grid-title,
   .grid-card:hover .grid-desc {
-    color: #ffffff;
+    color: #000000;
   }
   
   .grid-card:hover .grid-learn-more {
     opacity: 1;
     visibility: visible;
+    color: #000000;
   }
   
   .grid-icon {
@@ -426,12 +418,13 @@
     height: 28px;
     object-fit: contain;
     margin-bottom: 3px;
-    transition: filter 0.3s;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
     border-radius: 8px;
   }
   
   .grid-card:hover .grid-icon {
-    filter: brightness(0) invert(1);
+    transform: scale(1.2) rotate(-8deg);
+    filter: drop-shadow(0 4px 12px rgba(192, 132, 252, 0.5)) drop-shadow(0 2px 6px rgba(251, 191, 146, 0.4));
   }
   
   .grid-title {

@@ -128,11 +128,7 @@
               <input v-model="remember" type="checkbox" />
               <span>{{ t('auth.rememberMe') }}</span>
             </label>
-            <button type="button" class="link-btn">{{ t('auth.forgotPassword') }}</button>
-          </div>
-
-          <div class="form-row form-row--animation fade-in-up" :class="{ 'animate': isMounted }">
-            <label class="checkbox">
+            <label class="checkbox checkbox--animation">
               <input v-model="enableLoginAnimation" type="checkbox" />
               <span>{{ i18n.locale === 'zh' ? '开启登录动画' : 'Enable login animation' }}</span>
             </label>
@@ -306,7 +302,7 @@ const passwordLabelChars = computed(() =>
 const phone = ref('')
 const password = ref('')
 const remember = ref(true)
-const enableLoginAnimation = ref(localStorage.getItem('enableLoginAnimation') !== 'false')
+const enableLoginAnimation = ref(localStorage.getItem('enableLoginAnimation') === null || localStorage.getItem('enableLoginAnimation') === 'true')
 const isMounted = ref(false)
 const showLeftText = ref(false)
 
@@ -1087,22 +1083,17 @@ onMounted(() => {
   gap: 12px;
 }
 
-.form-row--animation {
-  justify-content: flex-start;
-  margin-top: -8px;
-}
-
-.form-row--animation .checkbox span {
-  color: #9ca3af;
-  font-size: 12px;
+.checkbox--animation span {
+  color: #000000;
+  font-size: 14px;
 }
 
 .checkbox {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
-  color: #374151;
+  font-size: 14px;
+  color: #000000;
   cursor: pointer;
 }
 

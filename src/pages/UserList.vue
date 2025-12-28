@@ -172,6 +172,7 @@ import { useUserStore } from '@/stores/user'
 import { useErrorStore } from '@/stores/error'
 import { useSuccessStore } from '@/stores/success'
 import { listAllUsers, updateUserByAdmin } from '@/services/adminService'
+import { getUserAvatars, buildAvatarMap } from '@/services/userService'
 import { getRoleOptions } from '@/utils/roles'
 
 const router = useRouter()
@@ -202,6 +203,7 @@ const isAdmin = computed(() => {
 
 // Data
 const users = ref([])
+const avatarMap = ref({})
 const isLoading = ref(false)
 const searchQuery = ref('')
 const currentPage = ref(1)
@@ -317,15 +319,35 @@ async function loadUsers() {
   isLoading.value = true
   try {
     const offset = (currentPage.value - 1) * pageSize
-    const response = await listAllUsers({ limit: pageSize, offset })
+    
+    // 并行加载用户列表和头像
+    const [response, avatarsResponse] = await Promise.all([
+      listAllUsers({ limit: pageSize, offset }),
+      avatarMap.value && Object.keys(avatarMap.value).length > 0 
+        ? Promise.resolve(null) // 已加载过头像，跳过
+        : getUserAvatars({ limit: 500, offset: 0 }).catch(() => [])
+    ])
+    
+    // 构建头像映射（仅首次加载）
+    if (avatarsResponse) {
+      avatarMap.value = buildAvatarMap(avatarsResponse)
+    }
+    
     // Handle different response formats
+    let userList = []
     if (Array.isArray(response)) {
-      users.value = response
+      userList = response
       totalUsers.value = response.length
     } else {
-      users.value = response.items || response.users || response.data || []
-      totalUsers.value = response.total ?? response.count ?? users.value.length
+      userList = response.items || response.users || response.data || []
+      totalUsers.value = response.total ?? response.count ?? userList.length
     }
+    
+    // 将头像映射到用户对象
+    users.value = userList.map(u => ({
+      ...u,
+      avatar_url: avatarMap.value[u.id] || ''
+    }))
   } catch (e) {
     if (e?.status === 403) {
       errorStore.showError(isZh.value ? '无权限访问用户列表' : 'Permission denied')

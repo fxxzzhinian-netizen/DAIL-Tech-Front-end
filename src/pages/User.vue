@@ -325,10 +325,40 @@
           <!-- Dominate -->
           <section v-else-if="activeTab === 'dominate'" class="panel">
             <div class="profile-cards">
-              <!-- Upload Resume (placeholder card) -->
+              <!-- My Tasks (All logged-in users) -->
               <button
                 class="info-card info-card--action float-in"
                 :style="{ '--d': '220ms' }"
+                :class="{ animate: contentAnimate }"
+                type="button"
+                @click="router.push({ name: 'my-tasks' })"
+              >
+                <div class="info-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 11l3 3L22 4"/>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                  </svg>
+                </div>
+
+                <div class="info-body">
+                  <div class="info-title">{{ i18n.locale === 'zh' ? '我的任务' : 'My Tasks' }}</div>
+                  <div class="info-sub">{{ i18n.locale === 'zh' ? '查看分配给我的任务并提交完成情况。' : 'View assigned tasks and submit your progress.' }}</div>
+                </div>
+
+                <div class="info-action" aria-hidden="true">
+                  <span class="info-action-badge" :title="i18n.locale === 'zh' ? '进入' : 'Open'">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M5 12h14"></path>
+                      <path d="m13 5 7 7-7 7"></path>
+                    </svg>
+                  </span>
+                </div>
+              </button>
+
+              <!-- Upload Resume (placeholder card) -->
+              <button
+                class="info-card info-card--action float-in"
+                :style="{ '--d': '280ms' }"
                 :class="{ animate: contentAnimate }"
                 type="button"
                 @click="router.push({ name: 'resume-settings' })"
@@ -362,7 +392,7 @@
               <button
                 v-if="isAdmin"
                 class="info-card info-card--action float-in"
-                :style="{ '--d': '280ms' }"
+                :style="{ '--d': '340ms' }"
                 :class="{ animate: contentAnimate }"
                 type="button"
                 @click="router.push({ name: 'user-list' })"
@@ -397,7 +427,7 @@
               <button
                 v-if="isAdmin"
                 class="info-card info-card--action float-in"
-                :style="{ '--d': '340ms' }"
+                :style="{ '--d': '400ms' }"
                 :class="{ animate: contentAnimate }"
                 type="button"
                 @click="router.push({ name: 'intern-manage' })"
@@ -431,7 +461,7 @@
               <button
                 v-if="isAdmin"
                 class="info-card info-card--action float-in"
-                :style="{ '--d': '400ms' }"
+                :style="{ '--d': '460ms' }"
                 :class="{ animate: contentAnimate }"
                 type="button"
                 @click="router.push({ name: 'broadcast-message' })"
@@ -446,6 +476,37 @@
                 <div class="info-body">
                   <div class="info-title">{{ i18n.locale === 'zh' ? '群发系统消息' : 'Broadcast Message' }}</div>
                   <div class="info-sub">{{ i18n.locale === 'zh' ? '向多个用户发送系统通知，支持按角色群发或指定用户。' : 'Send system notifications to multiple users by role or specific IDs.' }}</div>
+                </div>
+
+                <div class="info-action" aria-hidden="true">
+                  <span class="info-action-badge" :title="i18n.locale === 'zh' ? '打开' : 'Open'">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M5 12h14"></path>
+                      <path d="m13 5 7 7-7 7"></path>
+                    </svg>
+                  </span>
+                </div>
+              </button>
+
+              <!-- Task Publish (Admin/Manager only, role >= 3) -->
+              <button
+                v-if="isAdmin"
+                class="info-card info-card--action float-in"
+                :style="{ '--d': '520ms' }"
+                :class="{ animate: contentAnimate }"
+                type="button"
+                @click="router.push({ name: 'task-list' })"
+              >
+                <div class="info-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 11l3 3L22 4"/>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                  </svg>
+                </div>
+
+                <div class="info-body">
+                  <div class="info-title">{{ i18n.locale === 'zh' ? '任务管理' : 'Task Management' }}</div>
+                  <div class="info-sub">{{ i18n.locale === 'zh' ? '发布任务、查看提交、评分管理。' : 'Publish tasks, view submissions, and manage scores.' }}</div>
                 </div>
 
                 <div class="info-action" aria-hidden="true">
@@ -2297,7 +2358,7 @@
     padding: 18px 20px;
     border-radius: 18px;
     background: rgba(255,255,255,0.78);
-    border: 1.5px solid #000000;
+    border: none;
     box-shadow: 0 12px 30px rgba(0,0,0,0.06);
     transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
   }

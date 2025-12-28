@@ -1,38 +1,48 @@
 <template>
-  <section class="broadcast-page">
+  <section class="task-publish-page">
     <div class="page-container">
       <header class="page-header">
         <h1 class="page-title reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '80ms' }">
-          {{ isZh ? '群发系统消息' : 'Broadcast Message' }}
+          {{ isZh ? '发布任务' : 'Publish Task' }}
         </h1>
         <p class="page-subtitle reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '140ms' }">
-          {{ isZh ? '向多个用户发送系统通知' : 'Send system notifications to multiple users' }}
+          {{ isZh ? '向指定角色或用户发布任务' : 'Publish tasks to specific roles or users' }}
         </p>
       </header>
 
-      <div class="broadcast-layout">
+      <div class="task-layout">
         <!-- Form Section -->
         <div class="form-section reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '200ms' }">
+          <!-- 2.2 表单输入区域 -->
           <div class="form-field">
-            <label class="form-label">{{ isZh ? '消息标题' : 'Title' }}</label>
+            <label class="form-label">
+              {{ isZh ? '任务标题' : 'Task Title' }}
+              <span class="char-count">{{ form.title.length }}/200</span>
+            </label>
             <input
               v-model="form.title"
               type="text"
               class="form-input"
-              :placeholder="isZh ? '系统消息' : 'System Message'"
+              maxlength="200"
+              :placeholder="isZh ? '请输入任务标题' : 'Enter task title'"
             />
           </div>
 
           <div class="form-field">
-            <label class="form-label">{{ isZh ? '消息内容' : 'Content' }} *</label>
+            <label class="form-label">
+              {{ isZh ? '任务内容' : 'Task Content' }} *
+              <span class="char-count">{{ form.content.length }}/5000</span>
+            </label>
             <textarea
               v-model="form.content"
               class="form-textarea"
-              :placeholder="isZh ? '请输入消息内容...' : 'Enter message content...'"
-              rows="5"
+              maxlength="5000"
+              :placeholder="isZh ? '请输入任务内容...' : 'Enter task content...'"
+              rows="6"
             ></textarea>
           </div>
 
+          <!-- 2.3 角色选择功能 -->
           <div class="form-field">
             <label class="form-label">{{ isZh ? '按角色发送' : 'Send by Role' }}</label>
             <div class="role-chips">
@@ -49,6 +59,7 @@
             </div>
           </div>
 
+          <!-- 2.4 用户选择功能 -->
           <div class="form-field">
             <label class="form-label">
               {{ isZh ? '指定用户发送' : 'Send to Specific Users' }}
@@ -99,62 +110,13 @@
           </div>
         </div>
       </div>
-
-      <!-- History Section -->
-      <div class="history-section reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '320ms' }" v-if="history.length > 0">
-        <div class="history-header">
-          <div class="history-title">{{ isZh ? '最近群发记录' : 'Recent Broadcasts' }}</div>
-        </div>
-        <div class="history-list">
-          <div 
-            v-for="(item, index) in history" 
-            :key="item.batch_id" 
-            class="history-card-item"
-            :style="{ '--delay': `${index * 60}ms` }"
-          >
-            <div class="history-card-content">
-              <div class="history-icon">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-                </svg>
-              </div>
-              <div class="history-main">
-                <div class="history-top">
-                  <span class="history-preview">{{ item.title || (isZh ? '系统消息' : 'System Message') }}</span>
-                  <span class="history-badge">{{ item.sent_count }} {{ isZh ? '人' : 'users' }}</span>
-                </div>
-                <div class="history-bottom">
-                  <span class="history-time">
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="12" r="10"/>
-                      <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                    {{ item.time }}
-                  </span>
-                </div>
-              </div>
-              <button
-                class="history-revoke"
-                :disabled="isRevoking === item.batch_id"
-                @click.stop="handleRevoke(item.batch_id)"
-              >
-                <svg v-if="isRevoking !== item.batch_id" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                  <path d="M3 3v5h5"/>
-                </svg>
-                <span>{{ isRevoking === item.batch_id ? '...' : (isZh ? '撤回' : 'Revoke') }}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
-    <!-- Bottom bar -->
+    <!-- 2.6 底部操作栏 -->
     <div class="bottom-bar">
       <div class="bottom-inner">
         <div class="bottom-left">
-          <div class="bottom-title">{{ isZh ? '群发消息' : 'Broadcast' }}</div>
+          <div class="bottom-title">{{ isZh ? '发布任务' : 'Publish Task' }}</div>
           <div class="bottom-sub">
             {{ form.roles.length > 0 ? `${form.roles.length} ${isZh ? '个角色' : 'roles'}` : '' }}
             {{ form.roles.length > 0 && selectedUsers.length > 0 ? ' + ' : '' }}
@@ -166,14 +128,14 @@
           <button class="btn ghost" type="button" @click="router.push('/user')">
             {{ isZh ? '返回' : 'Back' }}
           </button>
-          <button class="btn primary" type="button" :disabled="isSending" @click="handleSend">
-            {{ isSending ? (isZh ? '发送中...' : 'Sending...') : (isZh ? '发送消息' : 'Send Message') }}
+          <button class="btn primary" type="button" :disabled="isSubmitting" @click="handleSubmit">
+            {{ isSubmitting ? (isZh ? '发布中...' : 'Publishing...') : (isZh ? '发布任务' : 'Publish Task') }}
           </button>
         </div>
       </div>
     </div>
 
-    <!-- User Selection Modal -->
+    <!-- 2.5 用户选择弹窗 -->
     <div v-if="isUserModalOpen" class="modal-overlay" @click="closeUserModal">
       <div class="modal-container" @click.stop>
         <div class="modal-header">
@@ -194,7 +156,7 @@
             v-model="searchQuery"
             type="text"
             class="search-input"
-            :placeholder="isZh ? '搜索用户...' : 'Search users...'"
+            :placeholder="isZh ? '搜索用户名、手机号或邮箱...' : 'Search by name, phone or email...'"
           />
         </div>
 
@@ -243,18 +205,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Revoke Confirmation Modal -->
-    <WarningModal
-      v-model="showRevokeModal"
-      type="warning"
-      :title="isZh ? '确认撤回' : 'Confirm Revoke'"
-      :message="isZh ? '撤回后，已发送的消息将从用户的消息列表中删除。此操作不可恢复，确定要撤回吗？' : 'After revoking, the sent messages will be removed from users\' message lists. This action cannot be undone. Are you sure?'"
-      :confirm-text="isZh ? '确认撤回' : 'Revoke'"
-      :cancel-text="isZh ? '取消' : 'Cancel'"
-      :show-cancel="true"
-      @confirm="confirmRevoke"
-    />
   </section>
 </template>
 
@@ -266,9 +216,9 @@ import { useUserStore } from '@/stores/user'
 import { useErrorStore } from '@/stores/error'
 import { useSuccessStore } from '@/stores/success'
 import { listAllUsers } from '@/services/adminService'
+import { createTask } from '@/services/taskService'
 import { getUserAvatars, buildAvatarMap } from '@/services/userService'
 import { getRoleOptions, getRoleName } from '@/utils/roles'
-import WarningModal from '@/components/WarningModal.vue'
 
 const router = useRouter()
 const i18n = useI18nStore()
@@ -276,32 +226,34 @@ const userStore = useUserStore()
 const errorStore = useErrorStore()
 const successStore = useSuccessStore()
 
+// 2.8 国际化
 const isZh = computed(() => i18n.locale === 'zh')
+
+// 页面进入动画
 const pageEnter = ref(false)
 
-// Form state
+// 表单状态
 const form = reactive({
   title: '',
   content: '',
   roles: []
 })
 
+// 用户选择状态
 const selectedUsers = ref([])
-const searchQuery = ref('')
 const users = ref([])
 const avatarMap = ref({})
-const isLoadingUsers = ref(false)
-const isSending = ref(false)
-const isRevoking = ref(null)
-const history = ref([])
+const searchQuery = ref('')
 const isUserModalOpen = ref(false)
+const isLoadingUsers = ref(false)
 
-// Revoke confirmation modal
-const showRevokeModal = ref(false)
-const pendingRevokeId = ref(null)
+// 提交状态
+const isSubmitting = ref(false)
 
+// 角色选项
 const roleOptions = computed(() => getRoleOptions(isZh.value ? 'zh' : 'en'))
 
+// 2.5 过滤用户列表
 const filteredUsers = computed(() => {
   if (!searchQuery.value.trim()) return users.value
   const q = searchQuery.value.toLowerCase()
@@ -313,16 +265,19 @@ const filteredUsers = computed(() => {
   })
 })
 
+// 2.3 切换角色选择
 function toggleRole(role) {
   const idx = form.roles.indexOf(role)
   if (idx === -1) form.roles.push(role)
   else form.roles.splice(idx, 1)
 }
 
+// 检查用户是否已选中
 function isUserSelected(userId) {
   return selectedUsers.value.some(u => u.id === userId)
 }
 
+// 2.5 切换用户选择
 function toggleUser(user) {
   const idx = selectedUsers.value.findIndex(u => u.id === user.id)
   if (idx === -1) {
@@ -332,20 +287,24 @@ function toggleUser(user) {
   }
 }
 
+// 2.4 移除已选用户
 function removeUser(userId) {
   const idx = selectedUsers.value.findIndex(u => u.id === userId)
   if (idx !== -1) selectedUsers.value.splice(idx, 1)
 }
 
+// 获取用户头像字母
 function getAvatarLetter(user) {
   const name = user.display_name || user.username || 'U'
   return (name[0] || 'U').toUpperCase()
 }
 
+// 获取角色名称
 function getRoleNameLocal(role) {
   return getRoleName(role, isZh.value ? 'zh' : 'en')
 }
 
+// 2.5 打开用户选择弹窗
 function openUserModal() {
   isUserModalOpen.value = true
   if (users.value.length === 0) {
@@ -353,11 +312,13 @@ function openUserModal() {
   }
 }
 
+// 2.5 关闭用户选择弹窗
 function closeUserModal() {
   isUserModalOpen.value = false
   searchQuery.value = ''
 }
 
+// 2.5 加载用户列表
 async function loadUsers() {
   isLoadingUsers.value = true
   try {
@@ -391,157 +352,88 @@ async function loadUsers() {
   }
 }
 
-function loadHistory() {
-  try {
-    const saved = localStorage.getItem('broadcast_history')
-    if (saved) history.value = JSON.parse(saved).slice(0, 10)
-  } catch {}
-}
-
-function saveHistory() {
-  localStorage.setItem('broadcast_history', JSON.stringify(history.value))
-}
-
-async function handleSend() {
+// 2.7 表单提交
+async function handleSubmit() {
+  // 验证内容非空
   if (!form.content.trim()) {
-    errorStore.showError(isZh.value ? '请输入消息内容' : 'Please enter message content')
+    errorStore.showError(isZh.value ? '请输入任务内容' : 'Please enter task content')
     return
   }
 
+  // 验证接收者非空
   const userIds = selectedUsers.value.map(u => u.id)
   if (form.roles.length === 0 && userIds.length === 0) {
     errorStore.showError(isZh.value ? '请选择发送目标' : 'Please select recipients')
     return
   }
 
-  isSending.value = true
+  isSubmitting.value = true
   try {
-    const token = userStore.accessToken
-    const res = await fetch('/api/admin/messages/broadcast', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        title: form.title.trim() || undefined,
-        content: form.content.trim(),
-        roles: form.roles.length > 0 ? form.roles : undefined,
-        user_ids: userIds.length > 0 ? userIds : undefined
-      })
+    const result = await createTask({
+      title: form.title.trim() || undefined,
+      content: form.content.trim(),
+      roles: form.roles.length > 0 ? form.roles : undefined,
+      user_ids: userIds.length > 0 ? userIds : undefined
     })
 
-    if (!res.ok) {
-      const text = await res.text()
-      throw new Error(text || `Failed (${res.status})`)
-    }
-
-    const result = await res.json()
+    // 成功响应
     successStore.showSuccess(
       isZh.value 
-        ? `已发送给 ${result.sent_count || result.recipient_count || 0} 位用户` 
-        : `Sent to ${result.sent_count || result.recipient_count || 0} users`
+        ? `任务已发布给 ${result.recipient_count || 0} 位用户` 
+        : `Task published to ${result.recipient_count || 0} users`
     )
 
-    // Add to history
-    history.value.unshift({
-      batch_id: result.batch_id,
-      sent_count: result.sent_count || result.recipient_count,
-      title: form.title.trim() || null,
-      time: new Date().toLocaleString(isZh.value ? 'zh-CN' : 'en-US', { 
-        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
-      })
-    })
-    if (history.value.length > 10) history.value.pop()
-    saveHistory()
-
-    // Reset form
+    // 重置表单
     form.title = ''
     form.content = ''
     form.roles = []
     selectedUsers.value = []
   } catch (err) {
-    errorStore.showError(err?.message || (isZh.value ? '发送失败' : 'Send failed'))
+    // 错误响应处理
+    const message = err?.message || ''
+    if (message.includes('403') || message.toLowerCase().includes('permission')) {
+      errorStore.showError(isZh.value ? '无权限执行此操作' : 'Permission denied')
+    } else if (message.includes('400') || message.toLowerCase().includes('no recipients')) {
+      errorStore.showError(isZh.value ? '没有找到接收者' : 'No recipients found')
+    } else {
+      errorStore.showError(isZh.value ? '发布失败' : 'Publish failed')
+    }
   } finally {
-    isSending.value = false
+    isSubmitting.value = false
   }
 }
 
-async function handleRevoke(batchId) {
-  // Show confirmation modal first
-  pendingRevokeId.value = batchId
-  showRevokeModal.value = true
-}
-
-async function confirmRevoke() {
-  const batchId = pendingRevokeId.value
-  if (!batchId) return
-  
-  isRevoking.value = batchId
-  try {
-    const token = userStore.accessToken
-    const res = await fetch(`/api/admin/messages/broadcast/${batchId}/revoke`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    if (!res.ok) {
-      const text = await res.text()
-      throw new Error(text || `Failed (${res.status})`)
-    }
-
-    const result = await res.json()
-    successStore.showSuccess(
-      isZh.value 
-        ? `已撤回 ${result.revoked_count || 0} 条消息` 
-        : `Revoked ${result.revoked_count || 0} messages`
-    )
-
-    // Remove from history
-    const idx = history.value.findIndex(h => h.batch_id === batchId)
-    if (idx !== -1) {
-      history.value.splice(idx, 1)
-      saveHistory()
-    }
-  } catch (err) {
-    errorStore.showError(err?.message || (isZh.value ? '撤回失败' : 'Revoke failed'))
-  } finally {
-    isRevoking.value = null
-    pendingRevokeId.value = null
-  }
-}
-
-// Check admin permission
-function checkAdmin() {
+// 权限检查：role >= 3 可访问
+function checkPermission() {
   try {
     const token = userStore.accessToken
     if (!token) return false
     const [, payload] = String(token).split('.')
     if (!payload) return false
     const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
-    return json?.role === 4
+    return json?.role >= 3
   } catch {
     return false
   }
 }
 
 onMounted(() => {
-  if (!userStore.isLoggedIn || !checkAdmin()) {
+  // 权限检查
+  if (!userStore.isLoggedIn || !checkPermission()) {
     router.push('/user')
     return
   }
   
+  // 页面进入动画
   requestAnimationFrame(() => {
     pageEnter.value = true
   })
-  
-  loadUsers()
-  loadHistory()
 })
 </script>
 
 
 <style scoped>
+/* Reveal animation */
 .reveal {
   opacity: 0;
   transform: translate3d(0, 22px, 0);
@@ -551,7 +443,8 @@ onMounted(() => {
 }
 .reveal.is-in { opacity: 1; transform: translate3d(0, 0, 0); filter: blur(0); }
 
-.broadcast-page {
+/* Page layout */
+.task-publish-page {
   min-height: 100vh;
   background: #fbfbfb;
   padding: 120px 24px 148px;
@@ -580,8 +473,7 @@ onMounted(() => {
   margin: 0;
 }
 
-/* Layout - Single Column */
-.broadcast-layout {
+.task-layout {
   width: 100%;
 }
 
@@ -589,8 +481,7 @@ onMounted(() => {
   width: 100%;
 }
 
-/* Form Section - No card wrapper */
-
+/* Form fields */
 .form-field {
   margin-bottom: 28px;
 }
@@ -616,6 +507,15 @@ onMounted(() => {
   color: rgba(0, 0, 0, 0.4);
   text-transform: none;
   letter-spacing: 0;
+}
+
+.char-count {
+  margin-left: auto;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.4);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
 }
 
 .form-input {
@@ -1034,175 +934,6 @@ onMounted(() => {
   text-align: center;
   color: rgba(0, 0, 0, 0.4);
   font-size: 14px;
-}
-
-/* History Section */
-.history-section {
-  margin-top: 48px;
-}
-
-.history-header {
-  margin-bottom: 16px;
-}
-
-.history-title {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #0b0f19;
-}
-
-.history-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.history-card-item {
-  width: 100%;
-  background: #ffffff;
-  border: 1.5px solid rgba(0, 0, 0, 0.08);
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-  animation-delay: var(--delay, 0ms);
-  box-sizing: border-box;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.history-card-item:hover {
-  border-color: rgba(0, 0, 0, 0.15);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
-}
-
-.history-card-item:active {
-  transform: scale(0.985) translateY(0);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.history-card-content {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-}
-
-.history-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #f5f5f5 0%, #ebebeb 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: rgba(0, 0, 0, 0.45);
-  transition: all 0.3s ease;
-}
-
-.history-card-item:hover .history-icon {
-  background: linear-gradient(135deg, #0b0f19 0%, #1a1f2e 100%);
-  color: #ffffff;
-  transform: scale(1.05);
-}
-
-.history-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.history-top {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 4px;
-}
-
-.history-preview {
-  font-size: 15px;
-  font-weight: 600;
-  color: #0b0f19;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.history-badge {
-  padding: 4px 10px;
-  background: rgba(59, 130, 246, 0.1);
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #3b82f6;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.history-bottom {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.history-time {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 13px;
-  color: rgba(0, 0, 0, 0.45);
-}
-
-.history-time svg {
-  opacity: 0.7;
-}
-
-.history-revoke {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
-  border: 1.5px solid rgba(239, 68, 68, 0.3);
-  background: rgba(239, 68, 68, 0.05);
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #ef4444;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-  flex-shrink: 0;
-}
-
-.history-revoke:hover:not(:disabled) {
-  background: #ef4444;
-  border-color: #ef4444;
-  color: #fff;
-  transform: scale(1.03);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
-}
-
-.history-revoke:active:not(:disabled) {
-  transform: scale(0.97);
-}
-
-.history-revoke:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* Bottom bar */
