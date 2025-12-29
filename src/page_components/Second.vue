@@ -320,6 +320,7 @@
     cursor: pointer;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease,
       transform 0.18s ease, border-color 0.18s ease;
@@ -385,7 +386,9 @@
       linear-gradient(24deg,  rgba(251, 191, 146, 0.75),rgba(192, 132, 252, 0.75)) border-box;
     border: 2.0px solid transparent;
     border-radius: 14px;
-    padding: 22px 28px;
+    padding: 20px 28px;
+    padding-left: 28px;
+    padding-right: 10px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -439,7 +442,7 @@
   }
   
   .grid-desc {
-    font-size: 10px;
+    font-size: 11px;
     color: rgba(0, 0, 0, 0.68);
     line-height: 1.7;
     display: -webkit-box;

@@ -159,3 +159,16 @@ export async function deleteSubmissionImage(taskId, imageId) {
   if (!iid) throw new Error('Missing image_id')
   return await apiRequest('DELETE', `/api/tasks/${encodeURIComponent(tid)}/submission/images/${encodeURIComponent(iid)}`)
 }
+
+/**
+ * 管理端：删除任务（含提交/图片等关联数据）
+ * DELETE /api/admin/tasks/{task_id}
+ * 权限：role >= 3
+ * @param {number|string} taskId
+ * @returns {Promise<void>}
+ */
+export async function deleteTask(taskId) {
+  const id = String(taskId ?? '').trim()
+  if (!id) throw new Error('Missing task_id')
+  return await apiRequest('DELETE', `/api/admin/tasks/${encodeURIComponent(id)}`)
+}

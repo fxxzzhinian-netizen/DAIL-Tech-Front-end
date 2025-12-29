@@ -49,12 +49,13 @@ const wheelThrottle = 800 // 翻页动画节流时间
 
 // ====== About 2/3/4 远程图片预加载（提前缓存，避免首次进入时闪动/布局跳变）======
 const ABOUT_IMG_BASE = 'https://pages-1327732770.cos.ap-guangzhou.myqcloud.com/about'
+const IMG_VERSION = 'v2' // 更新图片后修改此版本号以刷新缓存
 const ABOUT_IMG_URLS = [
   // `${ABOUT_IMG_BASE}/1.jpg`,
   // `${ABOUT_IMG_BASE}/2.jpg`,
   // `${ABOUT_IMG_BASE}/3.jpg`,
-  `${ABOUT_IMG_BASE}/5.jpg`,
-  `${ABOUT_IMG_BASE}/6.jpg`
+  `${ABOUT_IMG_BASE}/5.jpg?${IMG_VERSION}`,
+  `${ABOUT_IMG_BASE}/6.jpg?${IMG_VERSION}`
 ]
 
 const _preloaded = new Set()

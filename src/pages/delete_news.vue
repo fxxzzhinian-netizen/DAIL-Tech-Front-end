@@ -761,8 +761,16 @@ async function doDelete() {
 }
 
 .btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.97);
+  background: #000000;
+  color: #ffffff;
+  transform: scale(0.97);
   box-shadow: none;
+}
+
+.btn.danger:active:not(:disabled) {
+  background: #ffffff;
+  color: #000000;
+  transform: scale(0.97);
 }
 
 .btn.danger {

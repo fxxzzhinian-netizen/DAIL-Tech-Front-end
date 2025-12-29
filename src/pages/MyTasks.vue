@@ -81,11 +81,25 @@
           <div class="task-card-content">
             <div class="task-status-indicator">
               <!-- Pending -->
-              <div v-if="!task.my_submission" class="status-dot status-dot--pending"></div>
+              <div v-if="!task.my_submission" class="status-icon status-icon--pending">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
               <!-- Submitted but not scored -->
-              <div v-else-if="task.my_submission.score === null" class="status-dot status-dot--submitted"></div>
+              <div v-else-if="task.my_submission.score === null" class="status-icon status-icon--submitted">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+              </div>
               <!-- Scored -->
-              <div v-else class="status-dot status-dot--scored"></div>
+              <div v-else class="status-icon status-icon--scored">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              </div>
             </div>
             <div class="task-main">
               <div class="task-top">
@@ -481,25 +495,28 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.status-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
+.status-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.status-dot--pending {
-  background: #f59e0b;
-  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15);
+.status-icon--pending {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
 }
 
-.status-dot--submitted {
-  background: #3b82f6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+.status-icon--submitted {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
 }
 
-.status-dot--scored {
-  background: #10b981;
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+.status-icon--scored {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
 }
 
 .task-main {
@@ -680,7 +697,15 @@ onMounted(() => {
 }
 
 .btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.97);
+  background: #000000;
+  color: #ffffff;
+  transform: scale(0.97);
+}
+
+.btn.primary:active:not(:disabled) {
+  background: #ffffff;
+  color: #000000;
+  transform: scale(0.97);
 }
 
 .btn:disabled {

@@ -1000,12 +1000,25 @@ async function publish() {
   border: 1px solid #000000;
   background: transparent;
   color: #000000;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn:active:not(:disabled) {
+  background: #000000;
+  color: #ffffff;
+  transform: scale(0.97);
 }
 
 .btn.primary {
   background: #000000;
   border-color: #000000;
   color: #ffffff;
+}
+
+.btn.primary:active:not(:disabled) {
+  background: #ffffff;
+  color: #000000;
+  transform: scale(0.97);
 }
 
 .btn:disabled {

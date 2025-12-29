@@ -511,22 +511,22 @@ async function confirmRevoke() {
   }
 }
 
-// Check admin permission
-function checkAdmin() {
+// Check manager permission (role >= 3)
+function checkManager() {
   try {
     const token = userStore.accessToken
     if (!token) return false
     const [, payload] = String(token).split('.')
     if (!payload) return false
     const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
-    return json?.role === 4
+    return json?.role >= 3
   } catch {
     return false
   }
 }
 
 onMounted(() => {
-  if (!userStore.isLoggedIn || !checkAdmin()) {
+  if (!userStore.isLoggedIn || !checkManager()) {
     router.push('/user')
     return
   }
@@ -1277,7 +1277,15 @@ onMounted(() => {
 }
 
 .btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.97);
+  background: #000000;
+  color: #ffffff;
+  transform: scale(0.97);
+}
+
+.btn.primary:active:not(:disabled) {
+  background: #ffffff;
+  color: #000000;
+  transform: scale(0.97);
 }
 
 .btn:disabled {

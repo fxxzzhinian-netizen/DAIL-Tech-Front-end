@@ -1008,7 +1008,15 @@ onMounted(() => {
 }
 
 .btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.97);
+  background: #000000;
+  color: #ffffff;
+  transform: scale(0.97);
+}
+
+.btn.primary:active:not(:disabled) {
+  background: #ffffff;
+  color: #000000;
+  transform: scale(0.97);
 }
 
 .btn:disabled {

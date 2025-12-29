@@ -25,7 +25,7 @@ import { ref } from 'vue'
 import { useI18nStore } from '@/stores/i18n'
 import bgVideoSrc from '@/assets/images/about.mp4'
 
-const aboutImage = 'https://pages-1327732770.cos.ap-guangzhou.myqcloud.com/about/4.jpg'
+const aboutImage = 'https://pages-1327732770.cos.ap-guangzhou.myqcloud.com/about/4.jpg?v2'
 
 const i18n = useI18nStore()
 const t = (key, vars) => i18n.t(key, vars)
@@ -72,7 +72,7 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 40px;
+  gap: 120px;
   padding: 80px 60px;
   max-width: 1400px;
   position: relative;
@@ -99,8 +99,9 @@ defineExpose({
   display: flex;
   flex-direction: column;
   gap: 20px;
-  align-items: flex-end;
-  text-align: right;
+  align-items: flex-start;
+  text-align: left;
+  margin-left: 0px;
 }
 
 .about-three-title {

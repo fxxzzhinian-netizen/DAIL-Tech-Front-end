@@ -17,13 +17,21 @@
         <!-- Sidebar -->
         <aside class="sidebar">
   
-          <nav class="nav" :aria-label="t('user.navAria')">
+          <nav class="nav" :class="{ 'nav--ready': indicatorReady }" :aria-label="t('user.navAria')" ref="navRef">
+            <!-- 弹性滑动指示器 -->
+            <div 
+              class="nav-indicator" 
+              :class="{ 'nav-indicator--ready': indicatorReady }"
+              :style="indicatorStyle"
+            ></div>
+            
             <button
               class="nav-item float-in"
               :style="{ '--d': '80ms' }"
               :class="{ active: activeTab === 'profile', animate: isMounted }"
-              @click="activeTab = 'profile'"
+              @click="switchTab('profile')"
               type="button"
+              ref="navItemProfile"
             >
               <span class="nav-text">{{ t('user.navProfile') }}</span>
               <span class="nav-desc">{{ t('user.navProfileDesc') }}</span>
@@ -33,8 +41,9 @@
               class="nav-item float-in"
               :style="{ '--d': '140ms' }"
               :class="{ active: activeTab === 'dominate', animate: isMounted }"
-              @click="activeTab = 'dominate'"
+              @click="switchTab('dominate')"
               type="button"
+              ref="navItemDominate"
             >
               <span class="nav-text">{{ t('user.navDominate') }}</span>
               <span class="nav-desc">{{ t('user.navDominateDesc') }}</span>
@@ -46,7 +55,8 @@
               :style="{ '--d': '200ms' }"
               :class="{ active: activeTab === 'news', animate: isMounted }"
               type="button"
-              @click="activeTab = 'news'"
+              @click="switchTab('news')"
+              ref="navItemNews"
             >
               <span class="nav-text">{{ t('user.navNews') }}</span>
               <span class="nav-desc">{{ t('user.navNewsDesc') }}</span>
@@ -57,13 +67,14 @@
               :style="{ '--d': '260ms' }"
               :class="{ active: activeTab === 'messages', animate: isMounted }"
               type="button"
-              @click="activeTab = 'messages'; loadMessages()"
+              @click="switchTab('messages'); loadMessages()"
+              ref="navItemMessages"
             >
-              <span class="nav-text">
-                {{ t('messages.navMessages') }}
-                <span v-if="unreadCount > 0" class="nav-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+              <span class="nav-content">
+                <span class="nav-text">{{ t('messages.navMessages') }}</span>
+                <span class="nav-desc">{{ t('messages.navMessagesDesc') }}</span>
               </span>
-              <span class="nav-desc">{{ t('messages.navMessagesDesc') }}</span>
+              <span v-if="unreadCount > 0" class="nav-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
             </button>
           </nav>
   
@@ -390,7 +401,7 @@
 
               <!-- Browse All Users -->
               <button
-                v-if="isAdmin"
+                v-if="isManager"
                 class="info-card info-card--action float-in"
                 :style="{ '--d': '340ms' }"
                 :class="{ animate: contentAnimate }"
@@ -425,7 +436,7 @@
 
               <!-- Intern Applications Management -->
               <button
-                v-if="isAdmin"
+                v-if="isManager"
                 class="info-card info-card--action float-in"
                 :style="{ '--d': '400ms' }"
                 :class="{ animate: contentAnimate }"
@@ -457,9 +468,9 @@
                 </div>
               </button>
 
-              <!-- Broadcast Message (Admin only) -->
+              <!-- Broadcast Message (Manager only, role >= 3) -->
               <button
-                v-if="isAdmin"
+                v-if="isManager"
                 class="info-card info-card--action float-in"
                 :style="{ '--d': '460ms' }"
                 :class="{ animate: contentAnimate }"
@@ -488,9 +499,9 @@
                 </div>
               </button>
 
-              <!-- Task Publish (Admin/Manager only, role >= 3) -->
+              <!-- Task Management (Manager only, role >= 3) -->
               <button
-                v-if="isAdmin"
+                v-if="isManager"
                 class="info-card info-card--action float-in"
                 :style="{ '--d': '520ms' }"
                 :class="{ animate: contentAnimate }"
@@ -831,6 +842,59 @@
   const isMounted = ref(false)
   const contentAnimate = ref(false)
   const activeTab = ref('profile') // 'profile' | 'dominate' | 'news' | 'messages'
+  
+  // 导航栏弹性滑动指示器
+  const navRef = ref(null)
+  const navItemProfile = ref(null)
+  const navItemDominate = ref(null)
+  const navItemNews = ref(null)
+  const navItemMessages = ref(null)
+  const indicatorTop = ref(0)
+  const indicatorHeight = ref(0)
+  const isAnimating = ref(false)
+  const indicatorReady = ref(false)
+  
+  const indicatorStyle = computed(() => ({
+    transform: `translateY(${indicatorTop.value}px) scaleY(${isAnimating.value ? 1.08 : 1})`,
+    height: `${indicatorHeight.value}px`,
+  }))
+  
+  // 获取当前 tab 对应的按钮元素
+  function getNavItemRef(tab) {
+    const refs = {
+      profile: navItemProfile,
+      dominate: navItemDominate,
+      news: navItemNews,
+      messages: navItemMessages,
+    }
+    return refs[tab]?.value
+  }
+  
+  // 更新指示器位置
+  function updateIndicatorPosition(tab, animate = true) {
+    const navEl = navRef.value
+    const itemEl = getNavItemRef(tab)
+    if (!navEl || !itemEl) return
+    
+    const navRect = navEl.getBoundingClientRect()
+    const itemRect = itemEl.getBoundingClientRect()
+    
+    if (animate) {
+      isAnimating.value = true
+      setTimeout(() => { isAnimating.value = false }, 300)
+    }
+    
+    indicatorTop.value = itemRect.top - navRect.top
+    indicatorHeight.value = itemRect.height
+  }
+  
+  // 切换 tab
+  function switchTab(tab) {
+    if (activeTab.value === tab) return
+    activeTab.value = tab
+    sessionStorage.setItem('user_active_tab', tab)
+    updateIndicatorPosition(tab, true)
+  }
 
   const headerText = computed(() => {
     if (activeTab.value === 'profile') return t('user.headerProfile')
@@ -858,6 +922,7 @@
 
   const canPublishNews = ref(false)
   const isAdmin = ref(false)
+  const isManager = ref(false)
   const hasUpdatedResume = ref(false)
 
   // Messages state
@@ -916,6 +981,18 @@
       if (!payload) return false
       const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
       return json?.role === 4
+    } catch {
+      return false
+    }
+  }
+
+  function computeIsManagerFromToken(token) {
+    // Check if user has manager role (role >= 3)
+    try {
+      const [, payload] = String(token || '').split('.')
+      if (!payload) return false
+      const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+      return typeof json?.role === 'number' && json.role >= 3
     } catch {
       return false
     }
@@ -1521,12 +1598,34 @@
   }
   
   onMounted(() => {
+    // 先计算权限
+    canPublishNews.value = computeCanPublishNewsFromToken(userStore.accessToken)
+    isAdmin.value = computeIsAdminFromToken(userStore.accessToken)
+    isManager.value = computeIsManagerFromToken(userStore.accessToken)
+    
+    // 恢复上次的 tab
+    const savedTab = sessionStorage.getItem('user_active_tab')
+    if (savedTab && ['profile', 'dominate', 'news', 'messages'].includes(savedTab)) {
+      // 如果是 news tab 但没有权限，回退到 profile
+      if (savedTab === 'news' && !canPublishNews.value) {
+        activeTab.value = 'profile'
+      } else {
+        activeTab.value = savedTab
+      }
+    }
+    
     setTimeout(() => {
       isMounted.value = true
       contentAnimate.value = true
+      // 初始化指示器位置 - 延迟等待入场动画完成
+      setTimeout(() => {
+        updateIndicatorPosition(activeTab.value, false)
+        // 再延迟一点让指示器淡入显示
+        setTimeout(() => {
+          indicatorReady.value = true
+        }, 50)
+      }, 600)
     }, 80)
-    canPublishNews.value = computeCanPublishNewsFromToken(userStore.accessToken)
-    isAdmin.value = computeIsAdminFromToken(userStore.accessToken)
     fetchMyProfile()
     fetchMyResume()
     loadUnreadCount()
@@ -1545,6 +1644,7 @@
     () => {
       canPublishNews.value = computeCanPublishNewsFromToken(userStore.accessToken)
       isAdmin.value = computeIsAdminFromToken(userStore.accessToken)
+      isManager.value = computeIsManagerFromToken(userStore.accessToken)
       if (!userStore.accessToken) {
         if (activeTab.value === 'news') activeTab.value = 'profile'
         hasUpdatedResume.value = false
@@ -1554,6 +1654,13 @@
       }
     }
   )
+  
+  // 当 canPublishNews 变化时，重新计算指示器位置
+  watch(canPublishNews, () => {
+    nextTick(() => {
+      updateIndicatorPosition(activeTab.value, false)
+    })
+  })
   </script>
   
   <style scoped>
@@ -1672,16 +1779,59 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    position: relative;
+  }
+  
+  /* 弹性滑动指示器 */
+  .nav-indicator {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.90);
+    border-radius: 16px;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    transition: 
+      transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+      height 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+      opacity 0.3s ease;
+  }
+  
+  .nav-indicator--ready {
+    opacity: 1;
   }
   
   .nav-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
     text-align: left;
     border: 1px solid rgba(0,0,0,0.08);
     background: rgba(255,255,255,0.55);
     border-radius: 16px;
     padding: 14px 14px;
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    position: relative;
+    z-index: 1;
+  }
+
+  .nav-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* 当没有 nav-content 包装时，让 nav-text 和 nav-desc 占满宽度 */
+  .nav-item > .nav-text {
+    width: 100%;
+  }
+
+  .nav-item > .nav-desc {
+    width: 100%;
   }
   
   .nav-item:hover {
@@ -1689,9 +1839,9 @@
     box-shadow: 0 14px 35px rgba(0,0,0,0.10);
   }
   
-  .nav-item.active {
-    background: rgba(0,0,0,0.90);
-    border-color: rgba(0,0,0,0.90);
+  .nav--ready .nav-item.active {
+    background: transparent;
+    border-color: transparent;
     color: #fff;
   }
 
@@ -2143,16 +2293,16 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
-    margin-left: 6px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    margin-left: 12px;
     border-radius: 999px;
     background: #ef4444;
     color: #fff;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
-    vertical-align: middle;
+    flex-shrink: 0;
   }
 
   /* Hover invert (match profile cards) */

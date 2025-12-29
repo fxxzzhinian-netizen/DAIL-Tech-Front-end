@@ -48,7 +48,8 @@ import { useI18nStore } from '@/stores/i18n'
 import bgVideoSrc from '@/assets/images/section4.webm'
 
 const baseUrl = 'https://pages-1327732770.cos.ap-guangzhou.myqcloud.com/about'
-const aboutImages = [`${baseUrl}/5.jpg`, `${baseUrl}/6.jpg`]
+const imgVersion = 'v2' // 更新图片后修改此版本号
+const aboutImages = [`${baseUrl}/5.jpg?${imgVersion}`, `${baseUrl}/6.jpg?${imgVersion}`]
 
 const i18n = useI18nStore()
 const t = (key, vars) => i18n.t(key, vars)

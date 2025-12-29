@@ -992,8 +992,15 @@ onMounted(async () => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 .btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.97);
+  background: #000000;
+  color: #ffffff;
+  transform: scale(0.97);
   box-shadow: none;
+}
+.btn.primary:active:not(:disabled) {
+  background: #ffffff;
+  color: #000000;
+  transform: scale(0.97);
 }
 .btn:disabled {
   opacity: 0.55;

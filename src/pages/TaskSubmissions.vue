@@ -158,6 +158,9 @@
           <div class="bottom-sub">{{ scoredCount }}/{{ submissions.length }} {{ isZh ? '已评分' : 'scored' }}</div>
         </div>
         <div class="bottom-right">
+          <button class="btn danger" @click="openDeleteModal" :disabled="isDeleting">
+            {{ isZh ? '删除任务' : 'Delete' }}
+          </button>
           <button class="btn ghost" @click="router.push({ name: 'task-list' })">
             {{ isZh ? '返回' : 'Back' }}
           </button>
@@ -275,6 +278,18 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Delete Confirmation Modal -->
+    <WarningModal
+      v-model="showDeleteModal"
+      type="warning"
+      :title="isZh ? '确认删除' : 'Confirm Delete'"
+      :message="deleteModalMessage"
+      :show-cancel="true"
+      :confirm-text="isZh ? '确认删除' : 'Delete'"
+      :cancel-text="isZh ? '取消' : 'Cancel'"
+      @confirm="confirmDeleteTask"
+    />
   </section>
 </template>
 
@@ -285,7 +300,8 @@ import { useI18nStore } from '@/stores/i18n'
 import { useUserStore } from '@/stores/user'
 import { useErrorStore } from '@/stores/error'
 import { useSuccessStore } from '@/stores/success'
-import { listTasks, listTaskSubmissions, scoreSubmission } from '@/services/taskService'
+import { listTasks, listTaskSubmissions, scoreSubmission, deleteTask } from '@/services/taskService'
+import WarningModal from '@/components/WarningModal.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -320,6 +336,10 @@ const isScoring = ref(false)
 
 // Image preview
 const previewingImage = ref(null)
+
+// Delete task state
+const showDeleteModal = ref(false)
+const isDeleting = ref(false)
 
 // Stats bar glow effect
 const statsGlowX = ref(50)
@@ -527,6 +547,45 @@ function closePreview() {
   // Restore body scroll
   document.body.style.overflow = ''
   document.body.style.paddingRight = ''
+}
+
+// Delete task modal message
+const deleteModalMessage = computed(() => {
+  const taskTitle = task.value?.title || (isZh.value ? '未命名任务' : 'Untitled Task')
+  if (isZh.value) {
+    return `确定要删除任务「${taskTitle}」吗？此操作将同时删除所有提交记录和图片，且无法恢复。`
+  }
+  return `Are you sure you want to delete task "${taskTitle}"? This will also delete all submissions and images, and cannot be undone.`
+})
+
+// Open delete confirmation modal
+function openDeleteModal() {
+  showDeleteModal.value = true
+}
+
+// Confirm delete task
+async function confirmDeleteTask() {
+  if (!task.value || isDeleting.value) return
+  isDeleting.value = true
+  try {
+    await deleteTask(task.value.id)
+    successStore.showSuccess(isZh.value ? '任务已删除' : 'Task deleted')
+    router.push({ name: 'task-list' })
+  } catch (err) {
+    const status = err?.response?.status || err?.status
+    if (status === 401) {
+      errorStore.showError(isZh.value ? '未登录或登录已过期' : 'Not logged in or session expired')
+    } else if (status === 403) {
+      errorStore.showError(isZh.value ? '权限不足' : 'Permission denied')
+    } else if (status === 404) {
+      errorStore.showError(isZh.value ? '任务不存在' : 'Task not found')
+      router.push({ name: 'task-list' })
+    } else {
+      errorStore.showError(isZh.value ? '删除任务失败' : 'Failed to delete task')
+    }
+  } finally {
+    isDeleting.value = false
+  }
 }
 
 // Check permission
@@ -838,6 +897,10 @@ onMounted(async () => {
   border-left: 3px solid #22c55e;
 }
 
+.submission-card-item:not(.is-scored) {
+  border-left: 3px solid #3b82f6;
+}
+
 /* Card Glow Effect */
 .card-glow {
   position: absolute;
@@ -1013,11 +1076,14 @@ onMounted(async () => {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .btn:hover:not(:disabled) { background: rgba(0, 0, 0, 0.06); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
-.btn:active:not(:disabled) { transform: translateY(0) scale(0.97); }
+.btn:active:not(:disabled) { background: #000000; color: #ffffff; transform: scale(0.97); }
+.btn.primary:active:not(:disabled) { background: #ffffff; color: #000000; transform: scale(0.97); }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .btn.primary { background: #000000; border-color: #000000; color: #ffffff; }
 .btn.primary:hover:not(:disabled) { background: #1a1a1a; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2); }
 .btn.ghost { border-color: rgba(0, 0, 0, 0.2); }
+.btn.danger { background: transparent; border-color: #ef4444; color: #ef4444; }
+.btn.danger:hover:not(:disabled) { background: #ef4444; color: #ffffff; box-shadow: 0 6px 16px rgba(239, 68, 68, 0.25); }
 
 /* Modal */
 .modal-overlay {

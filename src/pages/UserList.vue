@@ -117,7 +117,7 @@
             </svg>
           </button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" @click="isRoleDropdownOpen = false">
           <div class="form-row">
             <label class="form-label">{{ isZh ? '用户名' : 'Username' }}</label>
             <input class="form-input" type="text" v-model="editForm.username" />
@@ -136,9 +136,28 @@
           </div>
           <div class="form-row">
             <label class="form-label">{{ isZh ? '角色' : 'Role' }}</label>
-            <select class="form-select" v-model="editForm.role">
-              <option v-for="opt in roleOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-            </select>
+            <div class="custom-select" :class="{ open: isRoleDropdownOpen }" @click.stop>
+              <div class="custom-select-trigger" @click="isRoleDropdownOpen = !isRoleDropdownOpen">
+                <span class="custom-select-value">{{ currentRoleLabel }}</span>
+                <svg class="custom-select-arrow" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="m6 9 6 6 6-6"/>
+                </svg>
+              </div>
+              <div class="custom-select-dropdown" v-if="isRoleDropdownOpen">
+                <div 
+                  v-for="opt in roleOptions" 
+                  :key="opt.value" 
+                  class="custom-select-option"
+                  :class="{ selected: editForm.role === opt.value }"
+                  @click="selectRole(opt.value)"
+                >
+                  <span>{{ opt.label }}</span>
+                  <svg v-if="editForm.role === opt.value" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="form-row form-row--checkbox">
             <label class="checkbox-label">
@@ -187,7 +206,21 @@ const pageEnter = ref(false)
 // Role options from global definition
 const roleOptions = computed(() => getRoleOptions(isZh.value ? 'zh' : 'en'))
 
-// Check if current user has admin role (role == 4)
+// Check if current user has manager role (role >= 3)
+const isManager = computed(() => {
+  try {
+    const token = userStore.accessToken
+    if (!token) return false
+    const [, payload] = String(token).split('.')
+    if (!payload) return false
+    const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+    return json?.role >= 3
+  } catch {
+    return false
+  }
+})
+
+// Check if current user has admin role (role === 4)
 const isAdmin = computed(() => {
   try {
     const token = userStore.accessToken
@@ -215,6 +248,18 @@ const isEditOpen = ref(false)
 const editingUser = ref(null)
 const editForm = ref({})
 const isSaving = ref(false)
+const isRoleDropdownOpen = ref(false)
+
+// Computed for current role label
+const currentRoleLabel = computed(() => {
+  const opt = roleOptions.value.find(o => o.value === editForm.value.role)
+  return opt ? opt.label : ''
+})
+
+function selectRole(value) {
+  editForm.value.role = value
+  isRoleDropdownOpen.value = false
+}
 
 const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize))
 
@@ -247,7 +292,7 @@ function handleSearch() {
 }
 
 function viewUserProfile(user) {
-  if (isAdmin.value) {
+  if (isManager.value) {
     openEditModal(user)
   }
 }
@@ -260,7 +305,7 @@ function openEditModal(user) {
     email: user.email || '',
     birthday: user.birthday || '',
     is_active: user.is_active !== false,
-    role: user.role || 1,
+    role: user.role ?? 1,
     password: ''
   }
   isEditOpen.value = true
@@ -270,6 +315,7 @@ function closeEditModal() {
   isEditOpen.value = false
   editingUser.value = null
   editForm.value = {}
+  isRoleDropdownOpen.value = false
 }
 
 async function saveUserEdit() {
@@ -291,14 +337,99 @@ async function saveUserEdit() {
     closeEditModal()
     await loadUsers()
   } catch (e) {
-    const msg = e?.message || e
-    if (e?.status === 409) {
-      errorStore.showError(isZh.value ? '用户名或手机号已存在' : 'Username or phone already exists')
-    } else if (e?.status === 403) {
-      errorStore.showError(isZh.value ? '无权限执行此操作' : 'Permission denied')
-    } else {
-      errorStore.showError(isZh.value ? `更新失败：${msg}` : `Update failed: ${msg}`)
+    let msg = ''
+    // 尝试解析错误消息
+    try {
+      if (typeof e?.message === 'string') {
+        const parsed = JSON.parse(e.message)
+        // 处理常见的错误格式
+        if (parsed.detail) {
+          if (Array.isArray(parsed.detail)) {
+            // FastAPI 验证错误格式
+            msg = parsed.detail.map(d => d.msg || d.message || d).join(', ')
+          } else {
+            msg = parsed.detail
+          }
+        } else if (parsed.message) {
+          msg = parsed.message
+        } else {
+          msg = e.message
+        }
+      } else {
+        msg = e?.message || String(e)
+      }
+    } catch {
+      msg = e?.message || String(e)
     }
+    
+    // 友好错误提示映射
+    const friendlyMessages = {
+      zh: {
+        password_short: '密码长度至少需要6个字符',
+        username_exists: '用户名已被使用',
+        phone_exists: '手机号已被使用',
+        email_exists: '邮箱已被使用',
+        email_invalid: '邮箱格式不正确',
+        phone_invalid: '手机号格式不正确',
+        permission_denied: '无权限执行此操作',
+        not_found: '用户不存在',
+        validation_failed: '输入信息有误，请检查后重试',
+        network_error: '网络连接失败，请稍后重试',
+        server_error: '服务器错误，请稍后重试',
+        default: '更新失败，请稍后重试'
+      },
+      en: {
+        password_short: 'Password must be at least 6 characters',
+        username_exists: 'Username already taken',
+        phone_exists: 'Phone number already in use',
+        email_exists: 'Email already in use',
+        email_invalid: 'Invalid email format',
+        phone_invalid: 'Invalid phone number format',
+        permission_denied: 'Permission denied',
+        not_found: 'User not found',
+        validation_failed: 'Invalid input, please check and try again',
+        network_error: 'Network error, please try again',
+        server_error: 'Server error, please try again',
+        default: 'Update failed, please try again'
+      }
+    }
+    
+    const lang = isZh.value ? 'zh' : 'en'
+    const msgLower = msg.toLowerCase()
+    
+    // 根据错误内容匹配友好提示
+    let friendlyMsg = ''
+    if (msgLower.includes('password') && (msgLower.includes('short') || msgLower.includes('least') || msgLower.includes('min') || msgLower.includes('characters'))) {
+      friendlyMsg = friendlyMessages[lang].password_short
+    } else if (e?.status === 409 || msgLower.includes('already') || msgLower.includes('exists') || msgLower.includes('duplicate')) {
+      if (msgLower.includes('username')) {
+        friendlyMsg = friendlyMessages[lang].username_exists
+      } else if (msgLower.includes('phone')) {
+        friendlyMsg = friendlyMessages[lang].phone_exists
+      } else if (msgLower.includes('email')) {
+        friendlyMsg = friendlyMessages[lang].email_exists
+      } else {
+        friendlyMsg = isZh.value ? '用户名或手机号已存在' : 'Username or phone already exists'
+      }
+    } else if (msgLower.includes('email') && (msgLower.includes('invalid') || msgLower.includes('format'))) {
+      friendlyMsg = friendlyMessages[lang].email_invalid
+    } else if (msgLower.includes('phone') && (msgLower.includes('invalid') || msgLower.includes('format'))) {
+      friendlyMsg = friendlyMessages[lang].phone_invalid
+    } else if (e?.status === 403 || msgLower.includes('permission') || msgLower.includes('forbidden')) {
+      friendlyMsg = friendlyMessages[lang].permission_denied
+    } else if (e?.status === 404 || msgLower.includes('not found')) {
+      friendlyMsg = friendlyMessages[lang].not_found
+    } else if (e?.status === 422) {
+      friendlyMsg = friendlyMessages[lang].validation_failed
+    } else if (e?.status >= 500 || msgLower.includes('server')) {
+      friendlyMsg = friendlyMessages[lang].server_error
+    } else if (msgLower.includes('network') || msgLower.includes('fetch')) {
+      friendlyMsg = friendlyMessages[lang].network_error
+    } else {
+      friendlyMsg = friendlyMessages[lang].default
+    }
+    
+    errorStore.showError(friendlyMsg)
   } finally {
     isSaving.value = false
   }
@@ -311,7 +442,7 @@ function goToPage(page) {
 }
 
 async function loadUsers() {
-  if (!isAdmin.value) {
+  if (!isManager.value) {
     errorStore.showError(isZh.value ? '无权限访问此页面' : 'Permission denied')
     return
   }
@@ -648,7 +779,15 @@ onMounted(() => {
 }
 
 .btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.97);
+  background: #000000;
+  color: #ffffff;
+  transform: scale(0.97);
+}
+
+.btn.primary:active:not(:disabled) {
+  background: #ffffff;
+  color: #000000;
+  transform: scale(0.97);
 }
 
 .btn:disabled {
@@ -792,5 +931,102 @@ onMounted(() => {
 .btn.primary:hover:not(:disabled) {
   background: #1a1a1a;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Custom Select */
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  font-size: 15px;
+  color: #000000;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.custom-select-trigger:hover {
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+.custom-select.open .custom-select-trigger {
+  border-color: #000000;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+}
+
+.custom-select-value {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-select-arrow {
+  flex-shrink: 0;
+  color: rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s ease;
+}
+
+.custom-select.open .custom-select-arrow {
+  transform: rotate(180deg);
+}
+
+.custom-select-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.15s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.custom-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  font-size: 14px;
+  color: #000000;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.custom-select-option:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.custom-select-option.selected {
+  background: rgba(0, 0, 0, 0.06);
+  font-weight: 600;
+}
+
+.custom-select-option svg {
+  color: #000000;
 }
 </style>
