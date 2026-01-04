@@ -239,6 +239,64 @@
           </div>
         </div>
 
+        <div class="divider"></div>
+
+        <!-- PDF 简历上传 -->
+        <div class="content">
+          <div class="section-label reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '340ms' }">
+            {{ isZh ? 'PDF 简历' : 'PDF Resume' }} <span class="required">*</span>
+          </div>
+
+          <div class="pdf-upload-section">
+            <!-- 已选择/已上传的文件 -->
+            <div v-if="pdfFileName" class="pdf-file-card">
+              <div class="pdf-file-icon">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <path d="M9 15h6"/>
+                  <path d="M9 11h6"/>
+                </svg>
+              </div>
+              <div class="pdf-file-info">
+                <div class="pdf-file-name">{{ pdfFileName }}</div>
+                <div class="pdf-file-status" :class="{ 'is-uploaded': hasPdfUploaded }">
+                  {{ hasPdfUploaded ? (isZh ? '已上传' : 'Uploaded') : (isZh ? '待上传' : 'Pending') }}
+                </div>
+              </div>
+              <button type="button" class="pdf-remove-btn" @click="removePdfFile" :title="isZh ? '移除' : 'Remove'">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- 上传区域 -->
+            <label v-else class="pdf-upload-zone" :class="{ 'is-uploading': isUploadingPdf }">
+              <input
+                ref="pdfFileInputRef"
+                type="file"
+                accept=".pdf,application/pdf"
+                class="sr-only"
+                :disabled="isUploadingPdf"
+                @change="handlePdfSelect"
+              />
+              <div class="pdf-upload-content">
+                <div class="pdf-upload-icon">
+                  <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <path d="M12 18v-6"/>
+                    <path d="M9 15l3-3 3 3"/>
+                  </svg>
+                </div>
+                <div class="pdf-upload-text">{{ isZh ? '点击上传 PDF 简历' : 'Click to upload PDF resume' }}</div>
+                <div class="pdf-upload-hint">{{ isZh ? '仅支持 PDF 格式，最大 20MB' : 'PDF only, max 20MB' }}</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
         <!-- 提交按钮 -->
         <div class="form-actions">
           <button type="submit" class="submit-btn" :disabled="isSubmitting">
@@ -258,6 +316,7 @@ import { useI18nStore } from '@/stores/i18n'
 import { useUserStore } from '@/stores/user'
 import { useSuccessStore } from '@/stores/success'
 import { useErrorStore } from '@/stores/error'
+import { uploadMyPdfResume, getMyPdfResume } from '@/services/resumeService'
 
 const router = useRouter()
 const i18n = useI18nStore()
@@ -270,6 +329,13 @@ const pageEnter = ref(false)
 const isSubmitting = ref(false)
 const alreadySubmitted = ref(false)
 const submitSuccess = ref(false)
+
+// PDF upload state
+const pdfFileInputRef = ref(null)
+const pdfFile = ref(null)
+const pdfFileName = ref('')
+const isUploadingPdf = ref(false)
+const hasPdfUploaded = ref(false)
 
 // Back button state (with drag support like NewsDetail)
 const isBackOpen = ref(false)
@@ -421,6 +487,156 @@ function getUserRole() {
   }
 }
 
+// PDF file validation and upload
+const MAX_PDF_SIZE = 20 * 1024 * 1024 // 20MB
+
+function handlePdfSelect(event) {
+  const file = event?.target?.files?.[0]
+  if (!file) return
+  
+  // Validate file
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    errorStore.showError(isZh.value ? '仅支持 PDF 格式文件' : 'Only PDF format is supported')
+    if (pdfFileInputRef.value) pdfFileInputRef.value.value = ''
+    return
+  }
+  
+  if (file.size > MAX_PDF_SIZE) {
+    errorStore.showError(isZh.value ? '文件大小不能超过 20MB' : 'File size must be <= 20MB')
+    if (pdfFileInputRef.value) pdfFileInputRef.value.value = ''
+    return
+  }
+  
+  pdfFile.value = file
+  pdfFileName.value = file.name
+}
+
+function removePdfFile() {
+  pdfFile.value = null
+  pdfFileName.value = ''
+  hasPdfUploaded.value = false
+  if (pdfFileInputRef.value) pdfFileInputRef.value.value = ''
+}
+
+async function uploadPdfResume() {
+  if (!pdfFile.value) return false
+  
+  isUploadingPdf.value = true
+  try {
+    await uploadMyPdfResume(pdfFile.value, pdfFile.value.name)
+    hasPdfUploaded.value = true
+    return true
+  } catch (e) {
+    const msg = parseErrorMessage(e)
+    errorStore.showError(isZh.value ? `PDF 简历上传失败：${msg}` : `PDF resume upload failed: ${msg}`)
+    return false
+  } finally {
+    isUploadingPdf.value = false
+  }
+}
+
+// Check if user already has PDF uploaded
+async function checkExistingPdf() {
+  try {
+    const pdfInfo = await getMyPdfResume()
+    if (pdfInfo?.url) {
+      hasPdfUploaded.value = true
+      pdfFileName.value = pdfInfo.original_filename || 'resume.pdf'
+    }
+  } catch {
+    // No existing PDF, that's fine
+  }
+}
+
+// Parse error message to readable text
+function parseErrorMessage(error) {
+  if (!error) return isZh.value ? '未知错误' : 'Unknown error'
+  
+  // If it's a string, return directly
+  if (typeof error === 'string') return error
+  
+  // Try to get message from various formats
+  const detail = error?.detail || error?.message || error?.error
+  
+  if (typeof detail === 'string') {
+    // Map common error messages to readable text
+    return mapErrorToReadable(detail)
+  }
+  
+  // FastAPI validation error format: detail is an array
+  if (Array.isArray(detail) && detail.length > 0) {
+    const firstError = detail[0]
+    const field = firstError?.loc?.slice(-1)?.[0] || ''
+    const msg = firstError?.msg || ''
+    return mapFieldError(field, msg)
+  }
+  
+  // Fallback
+  if (error?.status) {
+    return mapStatusCodeToMessage(error.status)
+  }
+  
+  return isZh.value ? '请求失败' : 'Request failed'
+}
+
+function mapErrorToReadable(msg) {
+  const lowerMsg = msg.toLowerCase()
+  
+  // Common error patterns
+  if (lowerMsg.includes('already') || lowerMsg.includes('duplicate') || lowerMsg.includes('exists')) {
+    return isZh.value ? '你已经提交过申请' : 'You have already submitted an application'
+  }
+  if (lowerMsg.includes('unauthorized') || lowerMsg.includes('token')) {
+    return isZh.value ? '请先登录' : 'Please login first'
+  }
+  if (lowerMsg.includes('forbidden') || lowerMsg.includes('permission')) {
+    return isZh.value ? '没有权限执行此操作' : 'No permission to perform this action'
+  }
+  if (lowerMsg.includes('not found')) {
+    return isZh.value ? '资源不存在' : 'Resource not found'
+  }
+  if (lowerMsg.includes('validation') || lowerMsg.includes('invalid')) {
+    return isZh.value ? '输入数据格式不正确' : 'Invalid input format'
+  }
+  if (lowerMsg.includes('pdf') && lowerMsg.includes('header')) {
+    return isZh.value ? '文件不是有效的 PDF 格式' : 'File is not a valid PDF'
+  }
+  if (lowerMsg.includes('size') || lowerMsg.includes('large')) {
+    return isZh.value ? '文件太大' : 'File too large'
+  }
+  
+  return msg
+}
+
+function mapFieldError(field, msg) {
+  const fieldNames = {
+    name: isZh.value ? '姓名' : 'Name',
+    age: isZh.value ? '年龄' : 'Age',
+    grade: isZh.value ? '年级' : 'Grade',
+    major: isZh.value ? '专业' : 'Major',
+    school: isZh.value ? '学校' : 'School',
+    preference: isZh.value ? '意向方向' : 'Preference',
+    experience: isZh.value ? '项目经验' : 'Experience',
+    message: isZh.value ? '留言' : 'Message',
+  }
+  
+  const fieldName = fieldNames[field] || field
+  return isZh.value ? `${fieldName}：${msg}` : `${fieldName}: ${msg}`
+}
+
+function mapStatusCodeToMessage(status) {
+  const messages = {
+    400: isZh.value ? '请求参数错误' : 'Bad request',
+    401: isZh.value ? '请先登录' : 'Please login first',
+    403: isZh.value ? '没有权限' : 'No permission',
+    404: isZh.value ? '资源不存在' : 'Not found',
+    409: isZh.value ? '你已经提交过申请' : 'Already submitted',
+    422: isZh.value ? '数据验证失败' : 'Validation failed',
+    500: isZh.value ? '服务器错误，请稍后重试' : 'Server error, please try again',
+  }
+  return messages[status] || (isZh.value ? `请求失败 (${status})` : `Request failed (${status})`)
+}
+
 async function handleSubmit() {
   if (isSubmitting.value) return
 
@@ -449,10 +665,25 @@ async function handleSubmit() {
     errorStore.showError(isZh.value ? '请选择意向方向' : 'Please select your preference')
     return
   }
+  
+  // 验证 PDF 简历（必填）
+  if (!pdfFile.value && !hasPdfUploaded.value) {
+    errorStore.showError(isZh.value ? '请上传 PDF 简历' : 'Please upload your PDF resume')
+    return
+  }
 
   isSubmitting.value = true
 
   try {
+    // 先上传 PDF 简历（如果有新文件）
+    if (pdfFile.value && !hasPdfUploaded.value) {
+      const pdfSuccess = await uploadPdfResume()
+      if (!pdfSuccess) {
+        isSubmitting.value = false
+        return
+      }
+    }
+    
     const token = userStore.accessToken
     const res = await fetch('/api/applications', {
       method: 'POST',
@@ -481,7 +712,8 @@ async function handleSubmit() {
     if (!res.ok) {
       let data = null
       try { data = await res.json() } catch {}
-      throw new Error(data?.detail || data?.message || `Request failed (${res.status})`)
+      const errorMsg = parseErrorMessage(data || { status: res.status })
+      throw new Error(errorMsg)
     }
 
     successStore.showSuccess(isZh.value ? '申请提交成功！' : 'Application submitted successfully!')
@@ -502,6 +734,9 @@ onMounted(() => {
   }
   
   setTimeout(() => { pageEnter.value = true }, 100)
+  
+  // 检查是否已上传过 PDF
+  checkExistingPdf()
 })
 </script>
 
@@ -1009,5 +1244,126 @@ onMounted(() => {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* PDF Upload Section */
+.pdf-upload-section {
+  margin-top: 8px;
+}
+
+.pdf-upload-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  border: 2px dashed rgba(0, 0, 0, 0.15);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pdf-upload-zone:hover {
+  border-color: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.pdf-upload-zone.is-uploading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.pdf-upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+}
+
+.pdf-upload-icon {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+.pdf-upload-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.pdf-upload-hint {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* PDF File Card */
+.pdf-file-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #fef2f2;
+  border: 1.5px solid #fecaca;
+  border-radius: 12px;
+}
+
+.pdf-file-icon {
+  flex-shrink: 0;
+  color: #dc2626;
+}
+
+.pdf-file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pdf-file-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0b0f19;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pdf-file-status {
+  font-size: 12px;
+  color: #f59e0b;
+  margin-top: 2px;
+}
+
+.pdf-file-status.is-uploaded {
+  color: #10b981;
+}
+
+.pdf-remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pdf-remove-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
 }
 </style>
