@@ -5,6 +5,7 @@ import Register from '@/pages/Register.vue'
 import User from '@/pages/User.vue'
 import UserList from '@/pages/UserList.vue'
 import ResumeSettings from '@/pages/ResumeSettings.vue'
+import ResumePdf from '@/pages/ResumePdf.vue'
 import ResumeView from '@/pages/ResumeView.vue'
 import News from '@/pages/News.vue'
 import NewsDetail from '@/pages/NewsDetail.vue'
@@ -39,6 +40,7 @@ const routes = [
   { path: '/register', name: 'register', component: Register },
   { path: '/user', name: 'user', component: User },
   { path: '/user/resume', name: 'resume-settings', component: ResumeSettings },
+  { path: '/user/resume-pdf', name: 'resume-pdf', component: ResumePdf },
   { path: '/user/resume/:userId', name: 'resume-view', component: ResumeView },
   { path: '/user/list', name: 'user-list', component: UserList },
   { path: '/user/interns', name: 'intern-manage', component: InternManage },

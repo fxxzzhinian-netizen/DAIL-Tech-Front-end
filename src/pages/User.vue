@@ -330,6 +330,38 @@
                   </span>
                 </div>
               </button>
+
+              <!-- PDF Resume -->
+              <button
+                class="info-card info-card--action float-in"
+                :style="{ '--d': '460ms' }"
+                :class="{ animate: contentAnimate }"
+                type="button"
+                @click="router.push({ name: 'resume-pdf' })"
+              >
+                <div class="info-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <path d="M12 18v-6"/>
+                    <path d="M9 15l3-3 3 3"/>
+                  </svg>
+                </div>
+
+                <div class="info-body">
+                  <div class="info-title">{{ i18n.locale === 'zh' ? 'PDF 简历' : 'PDF Resume' }}</div>
+                  <div class="info-sub">{{ i18n.locale === 'zh' ? '上传或更新您的 PDF 格式简历' : 'Upload or update your PDF resume' }}</div>
+                </div>
+
+                <div class="info-action" aria-hidden="true">
+                  <span class="info-action-badge" :title="i18n.locale === 'zh' ? '进入' : 'Open'">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M5 12h14"></path>
+                      <path d="m13 5 7 7-7 7"></path>
+                    </svg>
+                  </span>
+                </div>
+              </button>
             </div>
           </section>
   

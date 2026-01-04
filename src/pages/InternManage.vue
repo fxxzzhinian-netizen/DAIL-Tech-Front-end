@@ -115,6 +115,20 @@
               <div class="app-status" :class="statusClass(app.status)">
                 {{ statusText(app.status) }}
               </div>
+              <button 
+                v-if="hasPdfResume(app)" 
+                type="button"
+                class="pdf-btn"
+                :title="isZh ? '查看 PDF 简历' : 'View PDF Resume'"
+                @click.stop="openPdfPreview(app)"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <path d="M9 15h6"/>
+                  <path d="M9 11h6"/>
+                </svg>
+              </button>
               <div class="app-expand-icon" :class="{ rotated: expandedId === app.id }">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M6 9l6 6 6-6"/>
@@ -215,6 +229,43 @@
       :cancel-text="isZh ? '取消' : 'Cancel'"
       @confirm="executeAccept"
     />
+
+    <!-- PDF Preview Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="isPdfPreviewOpen" class="pdf-modal-overlay" @click="closePdfPreview">
+          <div class="pdf-modal" @click.stop>
+            <div class="pdf-modal-header">
+              <div class="pdf-modal-title">{{ pdfPreviewName }}</div>
+              <div class="pdf-modal-actions">
+                <a :href="pdfOriginalUrl" download class="pdf-modal-btn" :title="isZh ? '下载' : 'Download'">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                </a>
+                <a :href="pdfOriginalUrl" target="_blank" class="pdf-modal-btn" :title="isZh ? '新窗口打开' : 'Open in new tab'">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                    <polyline points="15 3 21 3 21 9"/>
+                    <line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                </a>
+                <button type="button" class="pdf-modal-btn pdf-modal-close" @click="closePdfPreview" :title="isZh ? '关闭' : 'Close'">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="pdf-modal-body">
+              <iframe :src="pdfPreviewUrl" class="pdf-iframe" frameborder="0"></iframe>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </section>
 </template>
 
@@ -227,6 +278,7 @@ import { useSuccessStore } from '@/stores/success'
 import { useErrorStore } from '@/stores/error'
 import WarningModal from '@/components/WarningModal.vue'
 import AcceptModal from '@/components/AcceptModal.vue'
+import { listAdminResumePdfs } from '@/services/resumeService'
 
 const router = useRouter()
 const i18n = useI18nStore()
@@ -264,6 +316,9 @@ const statusFilter = ref(null) // null = all, 0 = pending, 1 = accepted, 2 = rej
 const processingId = ref(null)
 const expandedId = ref(null)
 
+// PDF resume map: user_id -> pdf info
+const pdfResumeMap = ref({})
+
 // Reject modal
 const isRejectModalOpen = ref(false)
 const rejectTarget = ref(null)
@@ -271,6 +326,12 @@ const rejectTarget = ref(null)
 // Accept modal
 const isAcceptModalOpen = ref(false)
 const acceptTarget = ref(null)
+
+// PDF preview modal
+const isPdfPreviewOpen = ref(false)
+const pdfPreviewUrl = ref('')
+const pdfPreviewName = ref('')
+const pdfOriginalUrl = ref('')
 
 // Back button handlers
 function openBack() {
@@ -386,11 +447,63 @@ async function loadApplications() {
       throw new Error(`Failed to load (${res.status})`)
     }
     applications.value = await res.json()
+    
+    // Load PDF resume info for all users
+    await loadPdfResumeInfo()
   } catch (err) {
     errorStore.showError(err?.message || (isZh.value ? '加载失败' : 'Load failed'))
   } finally {
     isLoading.value = false
   }
+}
+
+// Load PDF resume info for applicants
+async function loadPdfResumeInfo() {
+  try {
+    const pdfList = await listAdminResumePdfs({ limit: 200 })
+    const map = {}
+    for (const pdf of pdfList) {
+      map[pdf.user_id] = pdf
+    }
+    pdfResumeMap.value = map
+  } catch (err) {
+    // Silently fail - PDF info is optional
+    console.warn('Failed to load PDF resume info:', err)
+  }
+}
+
+// Check if user has PDF resume
+function hasPdfResume(app) {
+  return !!pdfResumeMap.value[app.user_id]
+}
+
+// Get PDF resume URL
+function getPdfResumeUrl(app) {
+  return pdfResumeMap.value[app.user_id]?.url || ''
+}
+
+// Open PDF preview modal
+function openPdfPreview(app) {
+  const pdfInfo = pdfResumeMap.value[app.user_id]
+  if (!pdfInfo) return
+  // Save original URL for download button
+  pdfOriginalUrl.value = pdfInfo.url
+  // Use Google Docs Viewer to preview PDF (bypasses Content-Disposition: attachment)
+  pdfPreviewUrl.value = `https://docs.google.com/viewer?url=${encodeURIComponent(pdfInfo.url)}&embedded=true`
+  pdfPreviewName.value = pdfInfo.original_filename || (isZh.value ? 'PDF 简历' : 'PDF Resume')
+  isPdfPreviewOpen.value = true
+  document.body.style.overflow = 'hidden'
+}
+
+// Get original PDF URL for download
+function getOriginalPdfUrl(app) {
+  return pdfResumeMap.value[app.user_id]?.url || ''
+}
+
+// Close PDF preview modal
+function closePdfPreview() {
+  isPdfPreviewOpen.value = false
+  document.body.style.overflow = ''
 }
 
 // Accept confirmation
@@ -695,6 +808,34 @@ onMounted(() => {
 
 .app-row-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 
+/* PDF Button */
+.pdf-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  background: #fee2e2;
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+.pdf-btn:hover {
+  background: #fecaca;
+  transform: scale(1.08);
+}
+.pdf-btn:active {
+  transform: scale(0.95);
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.pdf-btn:focus {
+  outline: none;
+}
+
 .app-expand-icon {
   width: 32px;
   height: 32px;
@@ -851,5 +992,108 @@ onMounted(() => {
   font-size: 12px; 
   font-weight: 500;
   color: rgba(0, 0, 0, 0.4);
+}
+
+/* PDF Preview Modal */
+.pdf-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.pdf-modal {
+  width: 100%;
+  max-width: 1000px;
+  height: 90vh;
+  background: #fff;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+}
+
+.pdf-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+.pdf-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0b0f19;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pdf-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pdf-modal-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.6);
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pdf-modal-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #000;
+}
+
+.pdf-modal-close:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.pdf-modal-body {
+  flex: 1;
+  min-height: 0;
+}
+
+.pdf-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* Fade transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-active .pdf-modal,
+.fade-leave-active .pdf-modal {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+.fade-enter-from .pdf-modal,
+.fade-leave-to .pdf-modal {
+  transform: scale(0.95);
+  opacity: 0;
 }
 </style>
