@@ -33,13 +33,13 @@
           {{ isZh ? '加载中...' : 'Loading...' }}
         </div>
 
-        <div v-else-if="filteredUsers.length === 0" class="empty-state">
+        <div v-else-if="paginatedUsers.length === 0" class="empty-state">
           {{ isZh ? '暂无用户数据' : 'No users found' }}
         </div>
 
         <div
           v-else
-          v-for="(user, idx) in filteredUsers"
+          v-for="(user, idx) in paginatedUsers"
           :key="user.id"
           class="user-card reveal"
           :class="{ 'is-in': pageEnter }"
@@ -71,19 +71,49 @@
       <!-- Pagination -->
       <div v-if="totalPages > 1" class="pagination reveal" :class="{ 'is-in': pageEnter }" :style="{ '--d': '400ms' }">
         <button
-          class="page-btn"
+          class="page-btn nav-btn"
           :disabled="currentPage <= 1"
           @click="goToPage(currentPage - 1)"
         >
-          {{ isZh ? '上一页' : 'Prev' }}
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+          <span>{{ isZh ? '上一页' : 'Prev' }}</span>
         </button>
-        <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
+        
+        <div class="page-numbers">
+          <button
+            v-if="currentPage > 3"
+            class="page-btn num-btn"
+            @click="goToPage(1)"
+          >1</button>
+          <span v-if="currentPage > 4" class="page-ellipsis">...</span>
+          
+          <button
+            v-for="page in visiblePages"
+            :key="page"
+            class="page-btn num-btn"
+            :class="{ active: page === currentPage }"
+            @click="goToPage(page)"
+          >{{ page }}</button>
+          
+          <span v-if="currentPage < totalPages - 3" class="page-ellipsis">...</span>
+          <button
+            v-if="currentPage < totalPages - 2"
+            class="page-btn num-btn"
+            @click="goToPage(totalPages)"
+          >{{ totalPages }}</button>
+        </div>
+        
         <button
-          class="page-btn"
+          class="page-btn nav-btn"
           :disabled="currentPage >= totalPages"
           @click="goToPage(currentPage + 1)"
         >
-          {{ isZh ? '下一页' : 'Next' }}
+          <span>{{ isZh ? '下一页' : 'Next' }}</span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m9 18 6-6-6-6"/>
+          </svg>
         </button>
       </div>
     </div>
@@ -235,13 +265,12 @@ const isAdmin = computed(() => {
 })
 
 // Data
-const users = ref([])
+const allUsers = ref([])  // 全量用户数据
 const avatarMap = ref({})
 const isLoading = ref(false)
 const searchQuery = ref('')
 const currentPage = ref(1)
 const pageSize = 20
-const totalUsers = ref(0)
 
 // Edit modal
 const isEditOpen = ref(false)
@@ -261,18 +290,50 @@ function selectRole(value) {
   isRoleDropdownOpen.value = false
 }
 
-const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize))
-
+// 搜索过滤全量数据
 const filteredUsers = computed(() => {
-  if (!searchQuery.value.trim()) return users.value
+  if (!searchQuery.value.trim()) return allUsers.value
   const q = searchQuery.value.toLowerCase()
-  return users.value.filter(u => {
+  return allUsers.value.filter(u => {
     const name = (u.display_name || u.username || '').toLowerCase()
     const realName = (u.real_name || '').toLowerCase()
     const email = (u.email || '').toLowerCase()
     const phone = (u.phone || '').toLowerCase()
     return name.includes(q) || realName.includes(q) || email.includes(q) || phone.includes(q)
   })
+})
+
+// 分页显示
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return filteredUsers.value.slice(start, start + pageSize)
+})
+
+const totalUsers = computed(() => filteredUsers.value.length)
+const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize))
+
+// 计算可见的页码
+const visiblePages = computed(() => {
+  const pages = []
+  const total = totalPages.value
+  const current = currentPage.value
+  
+  let start = Math.max(1, current - 2)
+  let end = Math.min(total, current + 2)
+  
+  // 确保至少显示 5 个页码（如果有的话）
+  if (end - start < 4) {
+    if (start === 1) {
+      end = Math.min(total, start + 4)
+    } else if (end === total) {
+      start = Math.max(1, end - 4)
+    }
+  }
+  
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+  return pages
 })
 
 function getAvatarLetter(user) {
@@ -288,7 +349,8 @@ function formatDate(dateStr) {
 }
 
 function handleSearch() {
-  // Local filtering only
+  // 搜索时重置到第一页
+  currentPage.value = 1
 }
 
 function viewUserProfile(user) {
@@ -438,7 +500,7 @@ async function saveUserEdit() {
 function goToPage(page) {
   if (page < 1 || page > totalPages.value) return
   currentPage.value = page
-  loadUsers()
+  // 不再需要重新加载，因为数据已全部在前端
 }
 
 async function loadUsers() {
@@ -449,44 +511,54 @@ async function loadUsers() {
   
   isLoading.value = true
   try {
-    const offset = (currentPage.value - 1) * pageSize
+    // 分批加载全部用户（API 限制每次最多 200）
+    const batchSize = 200
+    let allUserList = []
+    let offset = 0
+    let hasMore = true
     
-    // 并行加载用户列表和头像
-    const [response, avatarsResponse] = await Promise.all([
-      listAllUsers({ limit: pageSize, offset }),
-      avatarMap.value && Object.keys(avatarMap.value).length > 0 
-        ? Promise.resolve(null) // 已加载过头像，跳过
-        : getUserAvatars({ limit: 500, offset: 0 }).catch(() => [])
-    ])
-    
-    // 构建头像映射（仅首次加载）
-    if (avatarsResponse) {
+    // 先加载头像
+    if (!avatarMap.value || Object.keys(avatarMap.value).length === 0) {
+      const avatarsResponse = await getUserAvatars({ limit: 200, offset: 0 }).catch(() => [])
       avatarMap.value = buildAvatarMap(avatarsResponse)
     }
     
-    // Handle different response formats
-    let userList = []
-    if (Array.isArray(response)) {
-      userList = response
-      totalUsers.value = response.length
-    } else {
-      userList = response.items || response.users || response.data || []
-      totalUsers.value = response.total ?? response.count ?? userList.length
+    // 分批加载用户
+    while (hasMore) {
+      const response = await listAllUsers({ limit: batchSize, offset })
+      
+      let userList = []
+      if (Array.isArray(response)) {
+        userList = response
+      } else {
+        userList = response.items || response.users || response.data || []
+      }
+      
+      allUserList = allUserList.concat(userList)
+      
+      // 如果返回数量小于请求数量，说明没有更多了
+      if (userList.length < batchSize) {
+        hasMore = false
+      } else {
+        offset += batchSize
+      }
     }
     
     // 将头像映射到用户对象
-    users.value = userList.map(u => ({
+    allUsers.value = allUserList.map(u => ({
       ...u,
       avatar_url: avatarMap.value[u.id] || ''
     }))
+    
+    // 重置到第一页
+    currentPage.value = 1
   } catch (e) {
     if (e?.status === 403) {
       errorStore.showError(isZh.value ? '无权限访问用户列表' : 'Permission denied')
     } else {
       errorStore.showError(isZh.value ? `加载用户失败：${e?.message || e}` : `Failed to load users: ${e?.message || e}`)
     }
-    users.value = []
-    totalUsers.value = 0
+    allUsers.value = []
   } finally {
     isLoading.value = false
   }
@@ -697,31 +769,84 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  margin-top: 32px;
+  gap: 8px;
+  margin-top: 40px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 16px;
+}
+
+.page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 8px;
 }
 
 .page-btn {
-  height: 36px;
-  padding: 0 16px;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  background: #ffffff;
-  color: #000000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
   font-size: 14px;
   font-weight: 500;
+  color: rgba(0, 0, 0, 0.6);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.page-btn:hover:not(:disabled) {
+.page-btn.nav-btn {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.page-btn.nav-btn:hover:not(:disabled) {
+  background: #000000;
+  color: #ffffff;
   border-color: #000000;
-  background: rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.page-btn.nav-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.page-btn.num-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.page-btn.num-btn:hover:not(:disabled):not(.active) {
+  background: rgba(0, 0, 0, 0.06);
+  color: #000000;
+}
+
+.page-btn.num-btn.active {
+  background: #000000;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .page-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
+}
+
+.page-ellipsis {
+  width: 32px;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.3);
+  font-weight: 500;
+  letter-spacing: 2px;
 }
 
 .page-info {
