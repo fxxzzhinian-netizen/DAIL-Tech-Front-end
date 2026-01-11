@@ -14,8 +14,28 @@
   
       <!-- 主体布局：左侧分选栏 + 右侧内容 -->
       <div class="layout">
+        <!-- 汉堡菜单按钮 -->
+        <button 
+          class="menu-toggle" 
+          :class="{ 'is-hidden': isSidebarOpen }"
+          type="button" 
+          @click="toggleSidebar"
+          :aria-label="i18n.locale === 'zh' ? '打开菜单' : 'Open menu'"
+        >
+          <span class="menu-toggle-bar"></span>
+          <span class="menu-toggle-bar"></span>
+          <span class="menu-toggle-bar"></span>
+        </button>
+
+        <!-- 遮罩层 -->
+        <div 
+          class="sidebar-overlay" 
+          :class="{ 'is-visible': isSidebarOpen }"
+          @click="closeSidebar"
+        ></div>
+
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <aside class="sidebar" :class="{ 'is-open': isSidebarOpen }">
   
           <nav class="nav" :class="{ 'nav--ready': indicatorReady }" :aria-label="t('user.navAria')" ref="navRef">
             <!-- 弹性滑动指示器 -->
@@ -874,6 +894,7 @@
   const isMounted = ref(false)
   const contentAnimate = ref(false)
   const activeTab = ref('profile') // 'profile' | 'dominate' | 'news' | 'messages'
+  const isSidebarOpen = ref(false) // 侧边栏抽屉状态
   
   // 导航栏弹性滑动指示器
   const navRef = ref(null)
@@ -926,6 +947,16 @@
     activeTab.value = tab
     sessionStorage.setItem('user_active_tab', tab)
     updateIndicatorPosition(tab, true)
+    // 选择后关闭侧边栏
+    isSidebarOpen.value = false
+  }
+
+  function toggleSidebar() {
+    isSidebarOpen.value = !isSidebarOpen.value
+  }
+
+  function closeSidebar() {
+    isSidebarOpen.value = false
   }
 
   const headerText = computed(() => {
@@ -1790,20 +1821,113 @@
     position: relative;
     z-index: 1;
     min-height: 100vh;
-    display: grid;
-    grid-template-columns: 320px 1fr;
+    display: block;
+  }
+
+  /* 汉堡菜单按钮 - 贴边箭头样式 */
+  .menu-toggle {
+    position: fixed;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    z-index: 60;
+    width: 24px;
+    height: 72px;
+    border: none;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 0 16px 16px 0;
+    box-shadow: 2px 0 16px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .menu-toggle:hover {
+    width: 32px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .menu-toggle:active {
+    width: 28px;
+    background: rgba(240, 240, 240, 0.95);
+  }
+
+  .menu-toggle.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-50%) translateX(-100%);
+  }
+
+  /* 隐藏原来的三条横线 */
+  .menu-toggle-bar {
+    display: none;
+  }
+
+  /* 箭头图标 */
+  .menu-toggle::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid #0f172a;
+    border-bottom: 2px solid #0f172a;
+    transform: rotate(-45deg) translateX(-1px);
+    transition: transform 0.3s ease, border-color 0.3s ease;
+  }
+
+  .menu-toggle:hover::after {
+    transform: rotate(-45deg) translateX(1px);
+    border-color: #000;
+  }
+
+  /* 遮罩层 */
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 49;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.35s ease, visibility 0.35s ease;
+  }
+
+  .sidebar-overlay.is-visible {
+    opacity: 1;
+    visibility: visible;
   }
   
   /* Sidebar */
   .sidebar {
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    width: 320px;
+    height: 100vh;
     padding: 36px 28px;
     display: flex;
     flex-direction: column;
     gap: 26px;
-    background: rgba(255,255,255,0.35);
-    backdrop-filter: blur(10px);
-    border-right: 1px solid rgba(0,0,0,0.08);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-right: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.08);
+    transform: translateX(-100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+  }
+
+  .sidebar.is-open {
+    transform: translateX(0);
   }
   
   .nav {
@@ -1819,7 +1943,7 @@
     position: absolute;
     left: 0;
     right: 0;
-    background: rgba(0,0,0,0.90);
+    background: rgba(0, 0, 0, 0.88);
     border-radius: 16px;
     pointer-events: none;
     z-index: 0;
@@ -1840,11 +1964,12 @@
     align-items: center;
     justify-content: space-between;
     text-align: left;
-    border: 1px solid rgba(0,0,0,0.08);
-    background: rgba(255,255,255,0.55);
+    border: 1.2px solid rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.5);
     border-radius: 16px;
     padding: 14px 14px;
     cursor: pointer;
+    color: #0f172a;
     transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
     position: relative;
     z-index: 1;
@@ -1868,7 +1993,9 @@
   
   .nav-item:hover {
     transform: translateY(-1px);
-    box-shadow: 0 14px 35px rgba(0,0,0,0.10);
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(0, 0, 0, 0.15);
   }
   
   .nav--ready .nav-item.active {
@@ -2434,59 +2561,119 @@
   
   .ghost-btn {
     width: 100%;
-    border: 1px solid rgba(0,0,0,0.12);
-    background: rgba(255,255,255,0.55);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.5);
     border-radius: 999px;
     padding: 12px 14px;
     font-weight: 800;
     letter-spacing: 0.04em;
     cursor: pointer;
-    color: #000000;
+    color: #0f172a;
     transition: all 0.3s ease;
   }
   
   .ghost-btn:hover,
   .ghost-btn:active {
     transform: translateY(-1px);
-    box-shadow: 0 14px 35px rgba(0,0,0,0.10);
-    background: #000000;
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.1);
+    background: #0f172a;
     color: #ffffff;
-    border-color: #000000;
+    border-color: #0f172a;
   }
   
   /* Content */
   .content {
     padding: clamp(32px, 5vw, 72px);
+    padding-left: clamp(80px, 8vw, 120px); /* 给汉堡菜单留空间 */
     display: flex;
     flex-direction: column;
     gap: 18px;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  /* 装饰光晕 */
+  .content::before {
+    content: '';
+    position: fixed;
+    top: 10%;
+    right: 5%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .content::after {
+    content: '';
+    position: fixed;
+    bottom: 15%;
+    left: 10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(236, 72, 153, 0.06) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
   }
   
   .content-header {
     max-width: 920px;
+    margin: 0 auto;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+    padding-bottom: 32px;
+    margin-bottom: 16px;
+  }
+
+  /* 标题下方装饰线 */
+  .content-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: -60px;
+    right: -60px;
+    height: 2px;
+    background: linear-gradient(90deg, 
+      rgba(0, 0, 0, 0.1) 0%, 
+      rgba(0, 0, 0, 0.15) 50%, 
+      rgba(0, 0, 0, 0.1) 100%
+    );
+    border-radius: 2px;
   }
   
   .content-title {
     margin-left: 20px;
     margin-top: 20px;
-    font-size: 28px;
-    line-height: 1.2;
+    font-size: 42px;
+    line-height: 1.1;
     color: #0f172a;
-    letter-spacing: 0.06em;
+    letter-spacing: -0.02em;
     font-weight: 900;
+    background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
   
   .content-subtitle {
-    margin-top: 10px;
+    margin-top: 14px;
     margin-left: 20px;
-    color: #6b7280;
-    font-size: 14px;
-    letter-spacing: 0.02em;
+    color: #64748b;
+    font-size: 16px;
+    letter-spacing: 0.01em;
+    font-weight: 500;
   }
   
   /* Panel（右侧内容卡片） */
   .panel {
     width: min(980px, 100%);
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
   }
   
   .panel-inner {
@@ -2529,8 +2716,14 @@
   .profile-cards {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 14px;
     padding: 6px 2px;
+  }
+
+  .profile-cards .info-card {
+    width: 100%;
+    max-width: 900px;
   }
 
   .info-card {
@@ -2884,7 +3077,7 @@
     color: #000000;
   }
 
-  /* Stepper（黑白极简） */
+  /* Stepper（浅色毛玻璃主题） */
   .stepper-wrapper {
     margin-bottom: 12px;
     margin-left: 12px;
@@ -2932,21 +3125,21 @@
     letter-spacing: 0.02em;
   }
 
-  /* 三态：done / active / pending（仅黑白灰） */
+  /* 三态：done / active / pending */
   .stepper-step.is-done .stepper-circle {
     background: #0f172a;
     color: #ffffff;
   }
 
   .stepper-step.is-active .stepper-circle {
-    background: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.7);
     border: 2px solid #0f172a;
     color: #0f172a;
   }
 
   .stepper-step.is-pending .stepper-circle {
-    background: rgba(255, 255, 255, 0.45);
-    border: 2px solid rgba(15, 23, 42, 0.12);
+    background: rgba(255, 255, 255, 0.5);
+    border: 2px solid rgba(15, 23, 42, 0.15);
     color: rgba(15, 23, 42, 0.45);
   }
 
@@ -2965,17 +3158,17 @@
   .stepper-sub {
     margin-top: 4px;
     font-size: 12px;
-    color: rgba(15, 23, 42, 0.55);
+    color: rgba(15, 23, 42, 0.6);
     line-height: 1.35;
   }
 
   /* pending 文案更淡 */
   .stepper-step.is-pending .stepper-title {
-    color: rgba(15, 23, 42, 0.55);
+    color: rgba(15, 23, 42, 0.5);
   }
 
   .stepper-step.is-pending .stepper-sub {
-    color: rgba(15, 23, 42, 0.40);
+    color: rgba(15, 23, 42, 0.4);
   }
 
   /* 通用浮现：黑白风格（不抢 hover 的质感） */
