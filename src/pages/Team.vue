@@ -61,7 +61,7 @@
             <div class="section-line"></div>
           </div>
           <div v-if="managers.length" class="members-row">
-            <div v-for="member in managers" :key="member.user_id" class="member-card member-card--manager" :class="{ 'member-card--private': member.private_hidden }" @click="viewProfile(member)">
+            <!-- <div v-for="member in managers" :key="member.user_id" class="member-card member-card--manager" :class="{ 'member-card--private': member.private_hidden }" @click="viewProfile(member)">
               <div class="member-avatar" :class="{ 'avatar-loading': !isAvatarLoaded(member) }">
                 <img 
                   v-if="getResumeAvatar(member)" 
@@ -84,7 +84,7 @@
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
               </div>
-            </div>
+            </div> -->
           </div>
           <div v-else class="empty-hint">{{ isZh ? '暂无成员' : 'No members yet' }}</div>
         </section>

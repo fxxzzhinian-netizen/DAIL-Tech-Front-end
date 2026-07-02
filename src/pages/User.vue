@@ -2587,7 +2587,7 @@
     padding-left: clamp(80px, 8vw, 120px); /* 给汉堡菜单留空间 */
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 0px;
     min-height: 100vh;
     position: relative;
   }
@@ -2625,24 +2625,8 @@
     width: 100%;
     position: relative;
     z-index: 1;
-    padding-bottom: 32px;
-    margin-bottom: 16px;
-  }
-
-  /* 标题下方装饰线 */
-  .content-header::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: -60px;
-    right: -60px;
-    height: 2px;
-    background: linear-gradient(90deg, 
-      rgba(0, 0, 0, 0.1) 0%, 
-      rgba(0, 0, 0, 0.15) 50%, 
-      rgba(0, 0, 0, 0.1) 100%
-    );
-    border-radius: 2px;
+    padding-bottom: 24px;
+    margin-bottom: 8px;
   }
   
   .content-title {
@@ -2735,7 +2719,36 @@
     background: rgba(255,255,255,0.78);
     border: none;
     box-shadow: 0 12px 30px rgba(0,0,0,0.06);
-    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    transition: transform 0.2s ease, box-shadow 0.3s ease, color 0.3s ease;
+  }
+
+  /* 黑色填充层 */
+  .info-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.92);
+    transform: scaleX(0);
+    transform-origin: right center;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: -1;
+    border-radius: 18px;
+  }
+
+  .info-card:hover::before {
+    transform: scaleX(1);
+    transform-origin: left center;
+  }
+
+  /* 鼠标离开时从右向左收回 */
+  .info-card:not(:hover)::before {
+    transform-origin: right center;
   }
 
   /* Button reset for clickable cards */
@@ -2881,9 +2894,7 @@
   }
 
   .info-card:hover {
-    transform: translateY(-1px);
-    background: rgba(0,0,0,0.90);
-    border-color: rgba(0,0,0,0.90);
+    transform: translateY(-2px);
     color: #ffffff;
     box-shadow: 0 18px 45px rgba(0,0,0,0.16);
   }
@@ -2927,148 +2938,189 @@
   .modal-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(15, 23, 42, 0.45);
-    backdrop-filter: blur(6px);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .modal {
     position: relative;
-    width: min(520px, 100%);
-    border-radius: 20px;
-    background: rgba(255,255,255,0.92);
-    border: 1px solid rgba(0,0,0,0.10);
-    box-shadow: 0 30px 80px rgba(0,0,0,0.22);
+    width: min(480px, 92%);
+    border-radius: 28px;
+    background: #ffffff;
+    border: none;
+    box-shadow: 
+      0 0 0 1px rgba(0, 0, 0, 0.05),
+      0 40px 100px rgba(0, 0, 0, 0.25),
+      0 10px 40px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    animation: modalSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes modalSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
 
   .modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding: 16px 16px 10px 16px;
-    border-bottom: 1px solid rgba(0,0,0,0.08);
+    gap: 16px;
+    padding: 28px 28px 0 28px;
   }
 
   .modal-title {
-    font-size: 14px;
-    font-weight: 900;
-    letter-spacing: 0.08em;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
     color: #0f172a;
-    text-transform: uppercase;
+    text-transform: none;
   }
 
   .modal-close {
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-    border: 1px solid rgba(0,0,0,0.10);
-    background: rgba(255,255,255,0.7);
-    color: #0f172a;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.05);
+    color: #64748b;
     display: grid;
     place-items: center;
     cursor: pointer;
+    transition: all 0.2s ease;
   }
 
   .modal-close:hover {
-    background: rgba(0,0,0,0.90);
-    border-color: rgba(0,0,0,0.90);
+    background: rgba(0, 0, 0, 0.9);
     color: #ffffff;
+    transform: rotate(90deg);
   }
 
   .modal-body {
-    padding: 16px;
+    padding: 24px 28px 28px 28px;
   }
 
   .modal-label {
     display: block;
-    font-size: 13px;
-    font-weight: 900;
-    letter-spacing: 0.03em;
-    color: #0f172a;
-    margin-bottom: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: #64748b;
+    margin-bottom: 12px;
   }
 
   .modal-input {
     width: 100%;
-    height: 44px;
-    border-radius: 14px;
-    border: 1px solid rgba(0,0,0,0.12);
-    background: rgba(255,255,255,0.85);
-    padding: 0 14px;
-    font-size: 14px;
+    height: 56px;
+    border-radius: 16px;
+    border: 2px solid rgba(0, 0, 0, 0.08);
+    background: #f8fafc;
+    padding: 0 20px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #0f172a;
     outline: none;
-    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: all 0.25s ease;
   }
 
   .modal-input:focus {
-    border-color: rgba(26, 115, 232, 0.55);
-    box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.14);
+    border-color: #0f172a;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.08);
+  }
+
+  .modal-input::placeholder {
+    color: #94a3b8;
   }
 
   .modal-error {
-    margin-top: 10px;
-    font-size: 12px;
-    color: #b91c1c;
-    font-weight: 700;
+    margin-top: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(239, 68, 68, 0.08);
+    font-size: 13px;
+    color: #dc2626;
+    font-weight: 600;
   }
 
   .modal-actions {
     display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    padding: 12px 16px 16px 16px;
-    border-top: 1px solid rgba(0,0,0,0.08);
+    gap: 12px;
+    padding: 0 28px 28px 28px;
   }
 
   .modal-btn {
-    border-radius: 999px;
-    padding: 10px 14px;
-    font-weight: 900;
-    letter-spacing: 0.04em;
+    flex: 1;
+    height: 52px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
     cursor: pointer;
-    border: 1px solid rgba(0,0,0,0.12);
-    background: rgba(255,255,255,0.65);
-    color: #0f172a;
-    transition: all 0.2s ease;
+    border: 2px solid rgba(0, 0, 0, 0.08);
+    background: #ffffff;
+    color: #374151;
+    transition: all 0.25s ease;
   }
 
   .modal-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 14px 35px rgba(0,0,0,0.10);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.15);
+  }
+
+  .modal-btn:active {
+    transform: translateY(0);
   }
 
   .modal-btn.primary {
-    background: rgba(0,0,0,0.90);
-    border-color: rgba(0,0,0,0.90);
+    background: #0f172a;
+    border-color: #0f172a;
     color: #ffffff;
   }
 
   .modal-btn.primary:hover {
-    background: #000000;
+    background: #1e293b;
+    border-color: #1e293b;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.3);
   }
 
   .date-row {
     display: grid;
     grid-template-columns: 1.2fr 1fr 1fr;
-    gap: 10px;
+    gap: 12px;
   }
 
   .modal-select {
     width: 100%;
-    height: 44px;
-    border-radius: 14px;
-    border: 1px solid rgba(0,0,0,0.12);
-    background: rgba(255,255,255,0.85);
-    padding: 0 12px;
-    font-size: 14px;
+    height: 56px;
+    border-radius: 16px;
+    border: 2px solid rgba(0, 0, 0, 0.08);
+    background: #f8fafc;
+    padding: 0 16px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #0f172a;
     outline: none;
-    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
   }
 
   .modal-select:focus {
-    border-color: rgba(26, 115, 232, 0.55);
-    box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.14);
+    border-color: #0f172a;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.08);
   }
 
   /* 头像也做反转 */
